@@ -1,8 +1,9 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 import numpy as np
 from GAN import Generator, Discriminator
-from utils import generate_noise
+from utils import generate_noise, visualise
 
 class RGAN():
     """
@@ -11,97 +12,105 @@ class RGAN():
 
     __MODEL__ = "RGAN"
         
-    def __init__(self, data: torch.Tensor, device: str, input_dim: int, hidden_dim: int, batch_size: int, seed: int):
+    def __init__(self, data: torch.Tensor, device: str, hidden_dim: int, seed: int = None, batch_size = 1):
         self.device = device
         self.data = data
+        self.data_loader = DataLoader(data, batch_size=batch_size, shuffle=True)
 
         # set seed for reproducibility
         if seed:
             torch.manual_seed(seed)
 
         # set dimensions
-        self.num_of_sequences, self.seq_length, self.num_of_features = self.data.shape
+        self.num_of_sequences = self.data.size(0)
+        self.seq_length = self.data.size(1)
+        self.num_of_features = self.data.size(2)
+        self.batch_size = batch_size
 
         # Create architecture
-        self.generator = Generator(input_dim, hidden_dim, self.num_of_features)
+        self.generator = Generator(self.num_of_features, hidden_dim, self.num_of_features)
         self.discriminator = Discriminator(self.num_of_features, hidden_dim)
 
-    def train(self, epochs: int, learning_rate, batch_size):
-        # set the loss function for the discriminator
-        self.optimizer_generator = torch.optim.Adam(self.generator.parameters(), lr=learning_rate)
-        self.optimizer_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=learning_rate)
-
+    def train(self, epochs: int, learning_rate: float):
+        # set the loss function and optimizers
+        optimizer_generator = torch.optim.Adam(self.generator.parameters(), lr=learning_rate)
+        optimizer_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=learning_rate)
         criterion = nn.BCELoss().to(self.device)
 
+        # Track losses per epochs
+        losses_generator = torch.zeros(epochs)
+        losses_discriminator = torch.zeros(epochs)
+
         for epoch in range(epochs):
-            for i in range(0, self.num_of_sequences, batch_size):
-                
+            for _, real_sequences in enumerate(self.data_loader):
                 # reset gradients of generator and discriminator
                 self.generator.zero_grad()
                 self.discriminator.zero_grad()
 
-                # Create databatch and labels
-                real_data = self.data[i:i+batch_size].to(self.device)
-                fake_labels = torch.zeros(real_data.shape[0], real_data.shape[1], 1).to(self.device)
-                real_labels = torch.ones(real_data.size(0), real_data.shape[1], 1).to(self.device)
-
-                # Create fake data for discriminator
-                noise = generate_noise().to(self.device)
+                # Forward pass
+                noise = generate_noise(self.batch_size, self.seq_length, self.num_of_features).to(self.device)
                 fake_data = self.generator(noise)
+                predictions_real = self.discriminator(real_sequences)
+                predictions_fake = self.discriminator(fake_data)
 
-                # Train the discriminator
-                outputs_real = self.discriminator(real_data)
-                outputs_fake = self.discriminator(fake_data)
-                
                 # Calculate discriminator loss
-                loss_real = criterion(outputs_real, real_labels)
-                loss_fake = criterion(outputs_fake, fake_labels)
+                labels_fake = torch.zeros_like(predictions_fake)
+                labels_real = torch.ones_like(predictions_real)
+                loss_real = criterion(predictions_real, labels_real)
+                loss_fake = criterion(predictions_fake, labels_fake)
                 loss_discriminator = loss_real + loss_fake
+                loss_discriminator.backward()
 
                 # Update discriminator
-                loss_discriminator.backward()
-                self.optimizer_discriminator.step()
+                optimizer_discriminator.step()
 
-                # Create fake data for training generator
-                noise = generate_noise().to(self.device)
+                # Reset the gradients of the optimizers
+                optimizer_generator.zero_grad()
+                self.discriminator.zero_grad()
+
+                # Forward pass
+                noise = generate_noise(self.batch_size, self.seq_length, self.num_of_features).to(self.device)
                 fake_data = self.generator(noise)
+                predictions_fake = self.discriminator(fake_data)
 
                 # Calculate loss for generator
-                outputs_fake = self.discriminator(fake_data)
-                loss_generator = criterion(outputs_fake, real_labels)
+                labels_real = torch.ones_like(predictions_fake)
+                loss_generator = criterion(predictions_fake, labels_real)
                 loss_generator.backward()
 
                 # Update generator
-                self.optimizer_generator.step()
+                optimizer_generator.step()
 
+            losses_discriminator[epoch] = loss_discriminator.item()
+            losses_generator[epoch] = loss_generator.item()
             print(f"Epoch {epoch+1}/{epochs}, Loss D.: {loss_discriminator.item()}, Loss G.: {loss_generator.item()}")
+        
+        visualise(epochs, [losses_discriminator, losses_generator], "Epochs", "Loss", ["Loss dicriminator", "Loss generator"], "RGAN losses")
     
-    def generate_data(self, num_samples, data_path):
+    def generate_data(self, num_samples: int, data_path: str, epochs: int):
         noise = generate_noise(num_samples, self.seq_length, self.num_of_features)
         with torch.no_grad():
             generated_data = self.generator(noise)
-            np.save("data/output/"+ data_path + "_" + self.__MODEL__, generated_data.numpy())
+            np.save(f"output/syndata/{self.__MODEL__}/{data_path}_{epochs}", generated_data.numpy())
             return generated_data
+
 
 if __name__ == '__main__':
     from utils import set_device
 
     # load testing data
-    path = "data/dummy.npy"
-    data = torch.from_numpy(np.load(path)).float()
+    path = "dummy.npy"
+    data = torch.from_numpy(np.load("data/" + path)).float()
     print(data.shape)
 
     # Setting parameters
     device = set_device()
-    input_dim = 10
-    hidden_dim = data.shape[2]
 
     print("Creating RGAN..")
-    model = RGAN(data, device, input_dim, hidden_dim)
+    model = RGAN(data, device, hidden_dim=10)
 
     print("Training RGAN..")
-    model.train(epochs=10, learning_rate=0.001)
-    gen_data = model.generate_data(10)
-    print(gen_data)
+    model.train(epochs=10, batch_size=1, learning_rate=0.001)
+    gen_data = model.generate_data(10, path)
 
     print("Finished!")

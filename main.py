@@ -3,10 +3,14 @@ from model import select_model
 
 
 if __name__ == "__main__":
-    args, settings = parse_args()
-    data = load_data(args.dataset)
-    model = select_model(args, data)
+    # Parse arguments, load data, select and train model
+    args = parse_args()
+    values, columns = load_data(args.dataset)
+    model = select_model(values, args)
     model.train(args.epochs, args.lr)
-    # print(model.generate_data(5, args.dataset))
+
+    # Generate samples
+    num_samples = values.shape[0]
+    model.generate_data(num_samples, args.dataset, args.epochs)
 
     print("Complete!")
