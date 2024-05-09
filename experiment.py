@@ -1,5 +1,4 @@
-from trainer import Trainer
-from evaluator import Evaluator
+from eval.evaluator import Evaluator
 
 from utils import parse_args
 from data_utils import load_data
@@ -9,15 +8,20 @@ import pickle
 import numpy as np
 from typing import List
 
+from metric import Privacy, Similarity, Utility, Diversity
+from models.RGAN import RGAN
+from models.RWGAN import RWGAN
+from models.TimeGAN import TimeGAN
+
 INPUT_PATH = f"data/input"
 
 datasets = ["cf", "cf_subset_time"]
-models = ["RGAN"]
-metrics = ["similarity", "utility", "privacy", "diversity", "fairness"]
+models = [RGAN, RWGAN, TimeGAN]
+metrics = [Privacy, Similarity, Utility, Diversity]
 
 class Experiment:
-    def __init__(self, model_classes: List, datasets: List, metrics: List, experiment_id: int):
-        self.model_classes = model_classes
+    def __init__(self, models: List, datasets: List, metrics: List, experiment_id: int):
+        self.models = models
         self.datasets = datasets
         self.metrics = metrics
 
@@ -36,17 +40,17 @@ class Experiment:
             data, columns = load_data(f"{dataset}.csv")
 
             # Loop through model types
-            for model_class in self.model_classes:
+            for model in self.models:
                 
                 # Generate instances per model
                 for instance_id in range(args.num_instances):
-                    instance = self.model_classes[model_class](data.shape, args.device, args.seed)
+                    instance = self.models[model](data.shape, args.device, args.seed)
 
                     # Train instance
                     instance.train(data)
 
                     # Save model
-                    model_path = f"{self.__OUTPUT_PATH__}/{dataset}/{model_class}"
+                    model_path = f"{self.__OUTPUT_PATH__}/{dataset}/{model}"
                     save_model(instance, model_path)
 
                     # Generate synthetic datasets
