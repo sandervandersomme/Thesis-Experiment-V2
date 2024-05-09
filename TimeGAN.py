@@ -33,13 +33,12 @@ class TimeGAN():
         self.embedder = Embedder(self.num_of_features, hyperparams["hidden_dim"], hyperparams["latent_dim"])
         self.recovery = Recovery(hyperparams["latent_dim"], hyperparams["hidden_dim"], self.num_of_features)
 
-    def generate_data(self, num_samples: int, path: str):
+    def generate_data(self, num_samples: int):
         noise = generate_noise(num_samples, self.seq_length, self.num_of_features)
         with torch.no_grad():
             generated_embeddings = self.generator(noise)
             supervised_embeddings = self.supervisor(generated_embeddings)
             generated_data = self.recovery(supervised_embeddings)
-            np.save(f"{path}/{num_samples}", generated_data.numpy())
             return generated_data    
         
     def train(self, data: torch.Tensor):
@@ -89,7 +88,7 @@ class TimeGAN():
                 self.recovery_optimizer.step()
             
             self.losses_reconstruction[epoch] = reconstruction_loss.item()
-            print(f"Epoch {epoch+1}/{hyperparams["epochs"]}, Reconstruction Loss: {reconstruction_loss.item()}")
+            print(f"Epoch {epoch+1}/{hyperparams['epochs']}, Reconstruction Loss: {reconstruction_loss.item()}")
         print("Training phase 1 complete!")
       
     def phase_2(self):
@@ -113,7 +112,7 @@ class TimeGAN():
                 self.supervisor_optimizer.step()
             
             self.losses_supervised[epoch] = supervised_loss.item()
-            print(f"Epoch {epoch+1}/{hyperparams["epochs"]}, Supervised Loss: {supervised_loss.item()}")
+            print(f"Epoch {epoch+1}/{hyperparams['epochs']}, Supervised Loss: {supervised_loss.item()}")
     
     def phase_3(self):
         # Training phase 3: Joint training
@@ -205,7 +204,7 @@ class TimeGAN():
             self.losses_discriminator[epoch] = discriminator_loss.item()
             self.losses_generator[epoch] = generator_loss.item()
             self.losses_embedder[epoch] = embedder_loss.item()
-            print(f"Epoch {epoch+1}/{hyperparams["epochs"]}, Generator loss: {generator_loss.item()}, Embedder loss: {embedder_loss.item()}, Discriminator Loss: {discriminator_loss.item()}")
+            print(f"Epoch {epoch+1}/{hyperparams['epochs']}, Generator loss: {generator_loss.item()}, Embedder loss: {embedder_loss.item()}, Discriminator Loss: {discriminator_loss.item()}")
 
     def visualise(self, path):
         self.visualise_phase1(path)

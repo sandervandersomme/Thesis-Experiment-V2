@@ -109,10 +109,9 @@ class RGAN():
         plt.savefig(f"{path}/loss.png")
         plt.clf()
     
-    def generate_data(self, num_samples: int, path: str):
+    def generate_data(self, num_samples: int):
         print(f"Generating {num_samples} samples")
         noise = generate_noise(num_samples, self.seq_length, self.num_of_features)
         with torch.no_grad():
-            generated_data = self.generator(noise)
-            np.save(f"{path}/{num_samples}", generated_data.numpy())
-            return generated_data
+            return self.generator(noise)
+
