@@ -6,7 +6,7 @@ import numpy as np
 
 from parameters import hyperparams
 
-from GAN import Generator
+from models.GAN import Generator
 from utils import generate_noise
 
 class RWGAN():

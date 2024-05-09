@@ -11,9 +11,9 @@ class Metric:
         self.methods = methods
         self.results = {}
 
-    def evaluate(self, data):
+    def evaluate(self, data, columns):
         for method in self.methods:
-            self.results[method.__name__] = method(data)
+            self.results[method.__name__] = method(data, columns)
 
 class Privacy(Metric):
     def __init__(self):

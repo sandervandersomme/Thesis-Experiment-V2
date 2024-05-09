@@ -7,7 +7,7 @@ class Generator(nn.Module):
     A GRU based generator that takes in a noise sequence and returns a synthetic sequence.
     """
 
-    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int, learning_rate: float = 0.001):
+    def __init__(self, input_dim: int, hidden_dim: int, output_dim: int):
         super(Generator, self).__init__()
 
         self.rnn = nn.GRU(input_dim, hidden_dim, batch_first=True)
@@ -25,7 +25,7 @@ class Discriminator(nn.Module):
     A GRU based discriminator that takes in a sequence as input and returns the likelihood of it being synthetic or real.
     """
 
-    def __init__(self, input_dim: int, hidden_dim: int, learning_rate: float = 0.001):
+    def __init__(self, input_dim: int, hidden_dim: int):
         super(Discriminator, self).__init__()
 
         self.rnn = nn.GRU(input_dim, hidden_dim, batch_first=True)

@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import numpy as np
-from GAN import Generator, Discriminator
+from models.GAN import Generator, Discriminator
 from utils import generate_noise
 import matplotlib.pyplot as plt
 from parameters import hyperparams

@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from GAN import Generator, Discriminator
+from models.GAN import Generator, Discriminator
 from utils import generate_noise
 
 from parameters import hyperparams

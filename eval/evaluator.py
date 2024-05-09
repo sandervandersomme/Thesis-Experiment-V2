@@ -7,6 +7,6 @@ class Evaluator:
         self.metrics = metrics
         self.results = {}
 
-    def evaluate(self, data):
+    def evaluate(self, data, columns: List[str]):
         for metric in self.metrics:
-            self.results[metric.name] = metric.evaluate(data)
+            self.results[metric.name] = metric.evaluate(data, columns)
