@@ -4,36 +4,20 @@ from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 from src.utilities.utils import set_device
 
-class TimeseriesRegressor(nn.Module):
+from src.models.downsteam_model import DownstreamModel
 
-    __MODEL__ = "ts-regressor"
+class TimeseriesRegressor(DownstreamModel):
 
-    # TODO: Adapt architecture
+    __NAME__ = "Regressor"
+
     def __init__(self, device: str, seed: int, **hyperparams):
         super().__init__()
 
-        # torch settings
-        if "device" in hyperparams: self.device = hyperparams["device"]
-        else: self.device = set_device()
-
-        if seed:
-            torch.manual_seed(seed)
-
-        # Architecture
-        self.input_dim = hyperparams["input_dim"]
-        self.hidden_dim = hyperparams["hidden_dim"]
-        self.num_layers = hyperparams["num_layers"]
-
-        self.gru = nn.GRU(self.input_dim, self.hidden_dim, num_layers=self.num_layers, batch_first=True)
+        self.gru = nn.GRU(self.num_features, self.hidden_dim, num_layers=self.num_layers, batch_first=True)
         self.fc = nn.Linear(self.hidden_dim, 1)
 
         # Send model to device
         self.to(self.device)
-
-        # Training parameters
-        self.batch_size = hyperparams["batch_size"]
-        self.epochs = hyperparams["epochs"]
-        self.learning_rate = hyperparams['learning_rate']
 
     def forward(self, sequences):
         output, _ = self.gru(sequences)

@@ -26,6 +26,11 @@ class DownstreamModel(nn.Module):
         self.batch_size = hyperparams["batch_size"]
         self.epochs = hyperparams["epochs"]
         self.learning_rate = hyperparams['learning_rate']
-    
-    # Implement something like early stopping
   
+downstream_model_params = {
+    "batch_size": 5,
+    "hidden_dim": 10,
+    "num_layers": 1,
+    "epochs": 300,
+    "learning_rate": 0.001
+}

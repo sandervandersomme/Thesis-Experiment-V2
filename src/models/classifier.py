@@ -24,13 +24,6 @@ class TimeseriesClassifier(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
     
-classifier_params = {
-    "batch_size": 5,
-    "hidden_dim": 10,
-    "num_layers": 1,
-    "epochs": 300,
-    "learning_rate": 0.001
-}
 
 def train_classifier(model: TimeseriesClassifier, data: Dataset, path: str):
     loss_fn = nn.BCEWithLogitsLoss().to(model.device)
