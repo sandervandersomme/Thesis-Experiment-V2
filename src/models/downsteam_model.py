@@ -31,6 +31,6 @@ downstream_model_params = {
     "batch_size": 5,
     "hidden_dim": 10,
     "num_layers": 1,
-    "epochs": 300,
+    "epochs": 50,
     "learning_rate": 0.001
 }
