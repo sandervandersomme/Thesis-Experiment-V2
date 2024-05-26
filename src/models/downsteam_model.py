@@ -8,17 +8,14 @@ class DownstreamModel(nn.Module):
 
     __NAME__ = None
 
-    def __init__(self, shape: tuple, **hyperparams):
+    def __init__(self, **hyperparams):
         super().__init__()
 
         # torch settings
-        if "device" in hyperparams: self.device = hyperparams["device"]
-        else: self.device = set_device()
+        self.device = hyperparams.get("device", set_device())
 
         if "seed" in hyperparams:
             torch.manual_seed(hyperparams["seed"])
-
-        self.num_sequences, self.num_events, self.num_features = shape
 
         # Training parameters
         self.hidden_dim = hyperparams["hidden_dim"]
@@ -26,6 +23,16 @@ class DownstreamModel(nn.Module):
         self.batch_size = hyperparams["batch_size"]
         self.epochs = hyperparams["epochs"]
         self.learning_rate = hyperparams['learning_rate']
+
+        # early stoppiung parameters
+        self.patience = hyperparams['patience']
+        self.min_delta = hyperparams['min_delta']
+
+        self.num_sequences = hyperparams["num_sequences"]
+        self.num_events = hyperparams["num_events"]
+        self.num_features = hyperparams["num_features"]
+
+        self.output_path = "outputs/"
   
 downstream_model_params = {
     "batch_size": 5,
