@@ -1,5 +1,5 @@
 from src.data.data_loader import get_data
-from src.models.RWGAN import RWGAN, train_RWGAN, RWGAN_params
+from src.models.rwgan import RWGAN, train_RWGAN, RWGAN_params
 
 
 if __name__ == "__main__":

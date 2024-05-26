@@ -9,9 +9,8 @@ class GenModel():
         - Generates synthetic data using generator
         """
 
-        # set device
-        if 'device' in hyperparams:self.device = hyperparams["device"]
-        else: self.device = set_device()
+        # torch settings
+        self.device = hyperparams.get("device", set_device())
         
         self.num_sequences, self.num_events, self.num_features = shape
 
