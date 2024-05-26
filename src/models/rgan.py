@@ -17,8 +17,8 @@ class RGAN(GenModel):
         super().__init__(**hyperparams)
 
         # Create architecture
-        self.generator = Generator(self.num_features, self.hidden_dim, self.num_features).to(self.device)
-        self.discriminator = Discriminator(self.num_features, self.hidden_dim).to(self.device)
+        self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
+        self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
 RGAN_params = {
     "batch_size": 5,

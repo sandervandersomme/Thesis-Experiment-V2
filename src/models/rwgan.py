@@ -22,8 +22,8 @@ class RWGAN(GenModel):
         self.n_critic = hyperparams["n_critic"]
 
         # Create architecture
-        self.generator = Generator(self.num_features, self.hidden_dim, self.num_features).to(self.device)
-        self.discriminator = Critic(self.num_features, self.hidden_dim).to(self.device)
+        self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
+        self.discriminator = Critic(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
         
 
 class ClipConstraint():
@@ -151,10 +151,10 @@ class Critic(nn.Module):
     A GRU based critic that takes in a sequence as input and returns the likelihood of it being synthetic or real.
     """
 
-    def __init__(self, input_dim: int, hidden_dim: int):
-        super(Critic, self).__init__()
+    def __init__(self, input_dim: int, hidden_dim: int, num_layers=1):
+        super().__init__()
 
-        self.rnn = nn.GRU(input_dim, hidden_dim, batch_first=True)
+        self.rnn = nn.GRU(input_dim, hidden_dim, num_layers=num_layers, batch_first=True)
         self.output_layer = nn.Linear(hidden_dim, 1)
 
     def forward(self, sequences: torch.Tensor):
