@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
-import numpy as np
 
-from src.models.GAN import Generator, Discriminator
+from src.models.gan import Generator, Discriminator
 from src.models.gen_model import GenModel
 
 from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
-
 
 class Embedder(nn.Module):
     """

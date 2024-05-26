@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from src.models.GAN import Generator, Discriminator
+from src.models.gan import Generator, Discriminator
 import matplotlib.pyplot as plt
 
 from src.models.gen_model import GenModel

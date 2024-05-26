@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
-from src.utilities.utils import set_device
 
 from src.models.downsteam_model import DownstreamModel
 

@@ -3,9 +3,9 @@ from typing import Callable
 
 # Load models
 from src.models.gen_model import GenModel
-from src.models.RGAN import RGAN, train_RGAN, RGAN_params
-from src.models.RWGAN import RWGAN, train_RWGAN, RWGAN_params
-from src.models.TimeGAN import TimeGAN, train_TimeGAN, TimeGAN_params
+from src.models.rgan import RGAN, train_RGAN, RGAN_params
+from src.models.rwgan import RWGAN, train_RWGAN, RWGAN_params
+from src.models.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
 
 # Load datasets
 from torch.utils.data import Dataset

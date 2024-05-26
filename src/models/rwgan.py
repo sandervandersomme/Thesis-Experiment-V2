@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
 from src.models.gen_model import GenModel
-from src.models.GAN import Generator
+from src.models.gan import Generator
 
 from typing import Callable
 
