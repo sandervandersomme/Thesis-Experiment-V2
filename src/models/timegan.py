@@ -57,7 +57,7 @@ class TimeGAN(GenModel):
     Time-series GAN consisting of a generator, discriminator, embedder and recovery function.
     """
     
-    __MODEL__ = "TimeGAN"
+    __NAME__ = "TimeGAN"
 
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)

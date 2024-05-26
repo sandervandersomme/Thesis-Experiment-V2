@@ -13,7 +13,7 @@ class RWGAN(GenModel):
     A Recurrent GAN consisting of a generator and discriminator.
     """
 
-    __MODEL__ = "RWGAN"
+    __NAME__ = "RWGAN"
         
     def __init__(self, shape: tuple, **hyperparams):
         super().__init__(shape, **hyperparams)

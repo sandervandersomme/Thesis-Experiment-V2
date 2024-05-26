@@ -11,7 +11,7 @@ class RGAN(GenModel):
     A Recurrent GAN consisting of a generator and discriminator.
     """
 
-    __MODEL__ = "RGAN"
+    __NAME__ = "RGAN"
         
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
