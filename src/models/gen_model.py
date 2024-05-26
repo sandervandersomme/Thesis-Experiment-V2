@@ -2,7 +2,10 @@ import torch
 from src.utilities.utils import set_device
 
 class GenModel():
-    def __init__(self, shape: tuple, **hyperparams):
+
+    __NAME__ = None
+
+    def __init__(self, **hyperparams):
         """
         - Sets device, seed, batch_size, num_events and num_features
         - Generates noise for generator
@@ -11,15 +14,27 @@ class GenModel():
 
         # torch settings
         self.device = hyperparams.get("device", set_device())
-        
-        self.num_sequences, self.num_events, self.num_features = shape
 
         if "seed" in hyperparams:
             torch.manual_seed(hyperparams["seed"])
 
-        self.epochs = hyperparams["epochs"]
+        # Training parameters
+        self.hidden_dim = hyperparams["hidden_dim"]
+        self.num_layers = hyperparams["num_layers"]
         self.batch_size = hyperparams["batch_size"]
-        self.learning_rate = hyperparams["learning_rate"]
+        self.epochs = hyperparams["epochs"]
+        self.learning_rate = hyperparams['learning_rate']
+
+        # early stoppiung parameters
+        self.patience = hyperparams['patience']
+        self.min_delta = hyperparams['min_delta']
+
+        # Data dimensions
+        self.num_sequences = hyperparams["num_sequences"]
+        self.num_events = hyperparams["num_events"]
+        self.num_features = hyperparams["num_features"]
+
+        self.output_path = "outputs/"
 
     def generate_noise(self, samples: int):
         """

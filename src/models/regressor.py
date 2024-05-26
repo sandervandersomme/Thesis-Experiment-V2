@@ -9,8 +9,8 @@ class TimeseriesRegressor(DownstreamModel):
 
     __NAME__ = "Regressor"
 
-    def __init__(self, shape: tuple, **hyperparams):
-        super().__init__(shape, **hyperparams)
+    def __init__(self, **hyperparams):
+        super().__init__(**hyperparams)
 
         self.gru = nn.GRU(self.num_features, self.hidden_dim, num_layers=self.num_layers, batch_first=True)
         self.fc = nn.Linear(self.hidden_dim, 1)

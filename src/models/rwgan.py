@@ -18,7 +18,6 @@ class RWGAN(GenModel):
     def __init__(self, shape: tuple, **hyperparams):
         super().__init__(shape, **hyperparams)
         
-        self.hidden_dim = hyperparams["hidden_dim"]
         self.clip_value = hyperparams["clip_value"]
         self.n_critic = hyperparams["n_critic"]
 

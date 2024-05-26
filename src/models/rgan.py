@@ -13,9 +13,8 @@ class RGAN(GenModel):
 
     __MODEL__ = "RGAN"
         
-    def __init__(self, shape: tuple, **hyperparams):
-        super().__init__(shape, **hyperparams)
-        self.hidden_dim = hyperparams["hidden_dim"]
+    def __init__(self, **hyperparams):
+        super().__init__(**hyperparams)
 
         # Create architecture
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features).to(self.device)

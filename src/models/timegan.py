@@ -59,11 +59,10 @@ class TimeGAN(GenModel):
     
     __MODEL__ = "TimeGAN"
 
-    def __init__(self, shape: tuple, **hyperparams):
-        super().__init__(shape, **hyperparams)
+    def __init__(self, **hyperparams):
+        super().__init__(**hyperparams)
 
         # Set hyperparams
-        self.hidden_dim = hyperparams["hidden_dim"]
         self.latent_dim = hyperparams["latent_dim"]
 
         # Create architecture

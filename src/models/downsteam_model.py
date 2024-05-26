@@ -1,7 +1,5 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
-import matplotlib.pyplot as plt
 from src.utilities.utils import set_device
 
 class DownstreamModel(nn.Module):
@@ -28,6 +26,7 @@ class DownstreamModel(nn.Module):
         self.patience = hyperparams['patience']
         self.min_delta = hyperparams['min_delta']
 
+        # Data dimensions
         self.num_sequences = hyperparams["num_sequences"]
         self.num_events = hyperparams["num_events"]
         self.num_features = hyperparams["num_features"]

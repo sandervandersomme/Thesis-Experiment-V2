@@ -10,7 +10,7 @@ from src.utilities.early_stopping import EarlyStopping
 
 class TimeseriesClassifier(DownstreamModel):
 
-    __NAME__ = "ts-classifier"
+    __NAME__ = "Classifier"
     __PATH__ = f"outputs/{__NAME__}"
 
     def __init__(self, **hyperparams):
