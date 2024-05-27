@@ -1,12 +1,15 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
+from typing import Callable
+
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader, Dataset
 
 from src.models.gen_model import GenModel
 from src.models.gan import Generator
+from src.utilities.early_stopping import EarlyStopping
 
-from typing import Callable
 
 class RWGAN(GenModel):
     """
@@ -25,7 +28,6 @@ class RWGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Critic(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
         
-
 class ClipConstraint():
     """
     Clips tensor values
@@ -47,22 +49,34 @@ RWGAN_params = {
     "clip_value": 0.05
 }
 
-def train_RWGAN(model: RWGAN, data: torch.Tensor, path: str):
-    data_loader = DataLoader(data, batch_size=model.batch_size, shuffle=True)
+def train_RWGAN(model: RWGAN, train_data: torch.Tensor, val_data: Dataset, log_dir):
+    writer = SummaryWriter(log_dir)
 
-    # set the loss function, optimizers and clipping constraint
+    # Setup training
+    criterion = wasserstein_loss
     optimizer_generator = torch.optim.RMSprop(model.generator.parameters(), lr=model.learning_rate)
     optimizer_critic = torch.optim.RMSprop(model.discriminator.parameters(), lr=model.learning_rate)
-    criterion = wasserstein_loss
+    val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
+    train_loader = DataLoader(train_data, batch_size=model.batch_size, shuffle=True)
     clip = ClipConstraint(model.clip_value)
+
+    # setup early stopping
+    early_stopping = EarlyStopping(model.patience, model.min_delta)
+    best_val_loss = float('inf')
 
     # Track losses per epochs
     losses_generator = torch.zeros(model.epochs)
     losses_critic_real = torch.zeros(model.epochs)
     losses_critic_fake = torch.zeros(model.epochs)
 
+    # Loss tracking
+    train_losses = []
+    val_losses = []
+
     for epoch in range(model.epochs):
-        for _, sequences in enumerate(data_loader):       
+        model.train()
+
+        for _, sequences in enumerate(train_loader):       
             sequences = sequences.to(model.device)      
 
             losses_critic_real[epoch], losses_critic_fake[epoch] = train_critic(model, sequences, optimizer_critic, criterion, clip)

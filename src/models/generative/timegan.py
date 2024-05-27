@@ -1,11 +1,14 @@
 import torch
 import torch.nn as nn
+import matplotlib.pyplot as plt
 
 from src.models.gan import Generator, Discriminator
 from src.models.gen_model import GenModel
 
-from torch.utils.data import DataLoader
-import matplotlib.pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
+from torch.utils.data import DataLoader, Dataset
+from src.utilities.early_stopping import EarlyStopping
+
 
 class Embedder(nn.Module):
     """
@@ -90,12 +93,8 @@ TimeGAN_params = {
 }
 
 
-def train_TimeGAN(model, data: torch.Tensor, path: str):
-    data_loader = DataLoader(data, model.batch_size, shuffle=True)
-
-    # Initialising loss functions
-    mse_loss = torch.nn.MSELoss().to(model.device)
-    bce_loss = torch.nn.BCELoss().to(model.device)
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, val_data: Dataset, log_dir):
+    writer = SummaryWriter(log_dir)
 
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
@@ -104,10 +103,26 @@ def train_TimeGAN(model, data: torch.Tensor, path: str):
     recovery_optimizer = torch.optim.Adam(model.recovery.parameters(), lr=model.learning_rate)
     supervisor_optimizer = torch.optim.Adam(model.supervisor.parameters(), lr=model.learning_rate)
 
+    # Setup dataloaders
+    val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
+    train_loader = DataLoader(train_data, model.batch_size, shuffle=True)
+
+    # setup early stopping
+    early_stopping = EarlyStopping(model.patience, model.min_delta)
+    best_val_loss = float('inf')
+
+    # Initialising loss functions
+    mse_loss = torch.nn.MSELoss().to(model.device)
+    bce_loss = torch.nn.BCELoss().to(model.device)
+
     # Train
-    losses_reconstruction = phase_1(model, data_loader, embedder_optimizer, recovery_optimizer, mse_loss)
-    losses_supervised = phase_2(model, data_loader, supervisor_optimizer, generator_optimizer, mse_loss)
-    losses_discriminator, losses_generator, losses_embedder = phase_3(model, data_loader, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss)
+    losses_reconstruction = phase_1(model, train_loader, embedder_optimizer, recovery_optimizer, mse_loss)
+    losses_supervised = phase_2(model, train_loader, supervisor_optimizer, generator_optimizer, mse_loss)
+    losses_discriminator, losses_generator, losses_embedder = phase_3(model, train_loader, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss)
+
+    # Loss tracking
+    train_losses = []
+    val_losses = []
 
     visualise_phase1(path, losses_reconstruction)
     visualise_phase2(path, losses_supervised)
@@ -120,6 +135,8 @@ def phase_1(model, dataloader: DataLoader, embedder_optimizer: torch.optim.Adam,
     losses_reconstruction = torch.zeros(model.epochs)
 
     for epoch in range(model.epochs):
+        model.train()
+
         for _, sequences in enumerate(dataloader):
             sequences = sequences.to(model.device)
 
@@ -150,6 +167,8 @@ def phase_2(model, dataloader: DataLoader, supervisor_optimizer: torch.optim.Ada
     losses_supervised = torch.zeros(model.epochs)
 
     for epoch in range(model.epochs):
+        model.train()
+
         for _, sequences in enumerate(dataloader):
             sequences = sequences.to(model.device)
 
@@ -181,9 +200,12 @@ def phase_3(model, dataloader: DataLoader, supervisor_optimizer: torch.optim.Ada
     losses_discriminator = torch.zeros(model.epochs)
 
     for epoch in range(model.epochs):
+        model.train()
+
         # Train generator and supervisor twice as much as discriminator
         for _ in range(2):
             for _, sequences in enumerate(dataloader):
+
                 sequences = sequences.to(model.device)
 
                 # Reset the gradients
@@ -238,6 +260,7 @@ def phase_3(model, dataloader: DataLoader, supervisor_optimizer: torch.optim.Ada
 
         # Train discriminator
         for _, sequences in enumerate(dataloader):
+
             sequences = sequences.to(model.device)
 
             # Reset the gradients of the optimizers
