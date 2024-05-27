@@ -1,6 +1,6 @@
-from src.models.regressor import TimeseriesRegressor, train_regressor
+from src.models.downstream.regressor import TimeseriesRegressor, train_regressor
 from src.data.cf_regression import CF_Regression
-from src.models.downsteam_model import downstream_model_params
+from src.models.downstream.downsteam_model import downstream_model_params
 from src.data.cf import CF
 import torch
 

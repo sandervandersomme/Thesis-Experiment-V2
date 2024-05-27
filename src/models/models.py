@@ -1,9 +1,9 @@
-from src.models.regressor import TimeseriesRegressor, train_regressor
-from classifier import TimeseriesClassifier, train_classifier
+from src.models.downstream.regressor import TimeseriesRegressor, train_regressor
+from src.models.downstream.classifier import TimeseriesClassifier, train_classifier
 
-from src.models.rgan import RGAN, train_RGAN, RGAN_params
-from src.models.rwgan import RWGAN, train_RWGAN, RWGAN_params
-from src.models.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
+from src.models.generative.rgan import RGAN, train_RGAN, RGAN_params
+from src.models.generative.rwgan import RWGAN, train_RWGAN, RWGAN_params
+from src.models.generative.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
 
 utility_models = {
     "regressor": (TimeseriesRegressor, train_regressor),

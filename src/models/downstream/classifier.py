@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 
 from torch.utils.tensorboard import SummaryWriter
-from src.models.downsteam_model import DownstreamModel
+from src.models.downstream.downsteam_model import DownstreamModel
 from src.utilities.early_stopping import EarlyStopping
 
 class TimeseriesClassifier(DownstreamModel):

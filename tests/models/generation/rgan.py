@@ -1,5 +1,5 @@
 from src.data.data_loader import get_data
-from src.models.rgan import RGAN, train_RGAN, RGAN_params
+from src.models.generative.rgan import RGAN, train_RGAN, RGAN_params
 
 import torch
 

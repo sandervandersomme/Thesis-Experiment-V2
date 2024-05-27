@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
 
-from src.models.downsteam_model import DownstreamModel
+from src.models.downstream.downsteam_model import DownstreamModel
 from src.utilities.early_stopping import EarlyStopping
 
 

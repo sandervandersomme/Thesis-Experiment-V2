@@ -1,6 +1,6 @@
-from src.models.classifier import TimeseriesClassifier, train_classifier
+from src.models.downstream.classifier import TimeseriesClassifier, train_classifier
 from src.data.cf_classification import CF_Classification
-from src.models.downsteam_model import downstream_model_params
+from src.models.downstream.downsteam_model import downstream_model_params
 from src.data.cf import CF
 import torch
 

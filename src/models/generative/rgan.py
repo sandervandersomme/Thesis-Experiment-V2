@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
 
-from src.models.gan import Generator, Discriminator
-from src.models.gen_model import GenModel
+from src.models.generative.gan import Generator, Discriminator
+from src.models.generative.gen_model import GenModel
 from src.utilities.early_stopping import EarlyStopping
 
 class RGAN(GenModel):

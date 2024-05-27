@@ -6,8 +6,8 @@ from typing import Callable
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
 
-from src.models.gen_model import GenModel
-from src.models.gan import Generator
+from src.models.generative.gen_model import GenModel
+from src.models.generative.gan import Generator
 from src.utilities.early_stopping import EarlyStopping
 
 

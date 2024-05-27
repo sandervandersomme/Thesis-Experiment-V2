@@ -2,10 +2,10 @@ import torch
 from typing import Callable
 
 # Load models
-from src.models.gen_model import GenModel
-from src.models.rgan import RGAN, train_RGAN, RGAN_params
-from src.models.rwgan import RWGAN, train_RWGAN, RWGAN_params
-from src.models.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
+from src.models.generative.gen_model import GenModel
+from src.models.generative.rgan import RGAN, train_RGAN, RGAN_params
+from src.models.generative.rwgan import RWGAN, train_RWGAN, RWGAN_params
+from src.models.generative.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
 
 # Load datasets
 from torch.utils.data import Dataset

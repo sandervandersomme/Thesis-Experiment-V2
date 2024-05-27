@@ -1,5 +1,5 @@
 from src.data.data_loader import get_data
-from src.models.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
+from src.models.generative.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
 
 
 if __name__ == "__main__":
