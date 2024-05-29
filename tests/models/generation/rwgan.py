@@ -1,15 +1,32 @@
-from src.data.data_loader import get_data
+from src.data.data_loader import select_data
 from src.models.generative.rwgan import RWGAN, train_RWGAN, RWGAN_params
+from src.models.generative.gen_model import gen_params
 
+import torch
 
 if __name__ == "__main__":
-    train_data, test_data, shape = get_data("cf_classification", 0.7)
+    # Load data
+    dataset = select_data("cf_classification")
+    numseq, numev, numfeat = dataset.sequences.shape
 
-    model = RWGAN(shape, **RWGAN_params)
+    # Load parameters
+    gen_params.update({
+        "num_sequences": numseq,
+        "num_events": numev,
+        "num_features": numfeat
+    })
+    gen_params.update(RWGAN_params)
 
-    path = f"outputs/testing/RWGAN/"
+    # Train model
+    model = RWGAN(**gen_params)
+    model.output_path = f"outputs/testing/genmodels/"
+    
+    train_RWGAN(model, dataset, log_dir=f"runs/testing/{model.__NAME__}/")
 
-    train_RWGAN(model, train_data, path)
+    # Generate and save data
+    syndata = model.generate_data(numseq)
+    torch.save(syndata, f"{model.output_path}/{model.__NAME__}/syndata")
+    print("Saving data..")
 
 
     
