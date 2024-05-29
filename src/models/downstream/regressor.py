@@ -27,7 +27,7 @@ class TimeseriesRegressor(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
     
-def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Dataset, log_dir):
+def train_regressor(model: DownstreamModel, train_data: Dataset, log_dir: str, val_data: Dataset):
     writer = SummaryWriter(log_dir)
 
     loss_fn = nn.MSELoss()
