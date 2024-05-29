@@ -120,6 +120,7 @@ def plot_losses(path, train_losses, val_losses):
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.grid(True)
+    plt.legend()
 
     plt.savefig(path)
     plt.close()

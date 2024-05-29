@@ -10,7 +10,7 @@ from torch.utils.data import random_split
 
 if __name__ == "__main__":
     # Load real data
-    dataset = select_data("cf_classification")
+    dataset = select_data("cf")
     cf_class = CF_Classification(dataset.sequences, dataset.columns.copy())
     numseq, numev, numfeat = cf_class.sequences.shape
 
