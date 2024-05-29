@@ -31,79 +31,83 @@ RGAN_params = {
     "num_layers": 1
 }
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, val_data: Dataset, log_dir):
+def train_RGAN(model: RGAN, train_data: torch.Tensor, log_dir):
     writer = SummaryWriter(log_dir)
 
     # Setup training
     half_batch = int(model.batch_size/2)
     train_loader = DataLoader(train_data, batch_size=half_batch, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
     optimizer_generator = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     optimizer_discriminator = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
+    criterion = nn.BCELoss().to(model.device)
 
     # setup early stopping
     early_stopping = EarlyStopping(model.patience, model.min_delta)
     best_val_loss = float('inf')
 
-    # Set loss function
-    criterion = nn.BCELoss().to(model.device)
-
     # Loss tracking
-    gen_train_losses = []
-    gen_val_losses = []
-    disc_train_losses = []
+    gen_losses = []
+    disc_losses = []
+    val_losses = []
 
+    # Start training loop
     for epoch in range(model.epochs):
 
-        # Model training
         model.generator.train()
         model.discriminator.train()
 
-        disc_loss = 0.0
-        gen_loss = 0.0
-        for _, sequences in enumerate(train_loader):
-            sequences = sequences.to(model.device)
-
-            disc_loss += discriminator_loss(model, optimizer_discriminator, criterion, sequences)
-            gen_loss += generator_loss(model, optimizer_generator, criterion)
-
-        avg_disc_loss = disc_loss / len(train_loader)
-        avg_gen_loss = gen_loss / len(train_loader)
-
-        disc_train_losses.append(avg_disc_loss)
-        gen_train_losses.append(avg_gen_loss)
+        gen_loss, disc_loss = train_loss(train_loader, model, optimizer_discriminator, optimizer_generator, criterion)
+        disc_losses.append(disc_loss)
+        gen_losses.append(gen_loss)
 
         # Model validation
         model.generator.eval()
         model.discriminator.eval()
-        g_val_loss = validate(model, criterion)
-        gen_val_losses.append(g_val_loss)
+        val_loss = validation_loss(model, criterion)
+        val_losses.append(val_loss)
 
         # Check if best loss has increased
-        if g_val_loss < best_val_loss:
-            best_val_loss = g_val_loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
 
         # Check for early stopping
-        early_stopping(g_val_loss)
+        early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
             writer.close()
             break
 
         # Logging losses
-        writer.add_scalar('Loss/Discriminator_Train', avg_disc_loss, epoch)
-        writer.add_scalar('Loss/Generator_Train', avg_gen_loss, epoch)
-        writer.add_scalar('Loss/Generator_Val', g_val_loss, epoch)
+        writer.add_scalar('Loss/disc', disc_loss, epoch)
+        writer.add_scalar('Loss/gen', gen_loss, epoch)
+        writer.add_scalar('Loss/val', val_loss, epoch)
 
-        print(f"Epoch {epoch+1}/{model.epochs}, Loss D.: {avg_disc_loss[epoch].item()}, Loss G.: {avg_gen_loss[epoch].item()}")
+        print(f"Epoch {epoch+1}/{model.epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
     
     writer.close()
 
-    plot_losses(f"{model.output_path}/rgan-loss", gen_train_losses, disc_train_losses, gen_val_losses)
+    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", gen_losses, disc_losses, val_losses)
 
     return best_val_loss
     
-def validate(model: RGAN, loss_fn:  nn.BCELoss):
+def train_loss(train_loader: DataLoader, model: RGAN, optim_disc: torch.optim.Adam, optim_gen: torch.optim.Adam, criterion: nn.BCELoss):
+    # Initialize losses
+    disc_loss = 0.0
+    gen_loss = 0.0
+
+    for _, sequences in enumerate(train_loader):
+        sequences = sequences.to(model.device)
+
+        disc_loss += discriminator_loss(model, optim_disc, criterion, sequences)
+        gen_loss += generator_loss(model, optim_gen, criterion)
+
+    avg_disc_loss = disc_loss / len(train_loader)
+    avg_gen_loss = gen_loss / len(train_loader)
+
+    return avg_gen_loss, avg_disc_loss
+
+def validation_loss(model: RGAN, loss_fn:  nn.BCELoss):
+    """Function for calculating the validation loss based on the generator's performance in fooling the discriminator"""
     # generate fake data
     noise = model.generate_noise(model.batch_size).to(model.device)
     fake_data = model.generator(noise)
@@ -171,5 +175,3 @@ def plot_losses(path, train_loss_gen, train_loss_disc, val_loss_gen):
     plt.savefig(path)  # Save the figure to a file
     plt.close()
     
-
-
