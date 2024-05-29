@@ -85,22 +85,8 @@ class TimeGAN(GenModel):
             supervised_embeddings = self.supervisor(generated_embeddings)
             generated_data = self.recovery(supervised_embeddings)
             return generated_data    
-        
-TimeGAN_params = {
-    "batch_size": 5,
-    "learning_rate": 0.0001,
-    "epochs": 10,
-    "hidden_dim": 10,
-    "num_layers": 1,
-    "latent_dim": 10,
-    "patience": 5,
-    "min_delta": 0.05,
-    "scaling_factor": 10,
-    "gamma_weight": 1,
-    "disc_loss_threshold": 0.15
-}
 
-def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, val_data: Dataset, log_dir):
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, log_dir: str, val_data: Dataset, ):
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
