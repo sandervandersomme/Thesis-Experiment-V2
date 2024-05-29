@@ -32,8 +32,8 @@ class RWGAN(GenModel):
 
     __NAME__ = "RWGAN"
         
-    def __init__(self, shape: tuple, **hyperparams):
-        super().__init__(shape, **hyperparams)
+    def __init__(self, **hyperparams):
+        super().__init__(**hyperparams)
         
         self.clip_value = hyperparams["clip_value"]
         self.n_critic = hyperparams["n_critic"]
@@ -54,11 +54,6 @@ class ClipConstraint():
             p.data.clamp_(-self.clip_value, self.clip_value)
 
 RWGAN_params = {
-    "batch_size": 5,
-    "learning_rate": 0.0001,
-    "epochs": 10,
-    "hidden_dim": 10,
-    "num_layers": 1,
     "n_critic": 1,
     "clip_value": 0.05
 }
@@ -91,14 +86,14 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_dir):
         # Calculate losses
         gen_loss, critic_loss_real, critic_loss_fake = train_loss(train_loader, model, optimizer_generator, optimizer_critic, criterion, clip) 
         gen_losses.append(gen_loss)
-        critic_losses_real.append(critic_loss_real)
-        critic_losses_fake.append(critic_loss_fake)
+        critic_losses_real.append(critic_loss_real.item())
+        critic_losses_fake.append(critic_loss_fake.item())
 
         # Validate model with generator loss
         model.generator.eval()
         model.critic.eval()
         val_loss = validation_loss(model, criterion)
-        val_losses.append(val_loss)
+        val_losses.append(val_loss.item())
 
         # Check for early stopping
         early_stopping(val_loss)
