@@ -23,14 +23,6 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-RGAN_params = {
-    "batch_size": 5,
-    "learning_rate": 0.0001,
-    "epochs": 200,
-    "hidden_dim": 10,
-    "num_layers": 1
-}
-
 def train_RGAN(model: RGAN, train_data: torch.Tensor, log_dir):
     writer = SummaryWriter(log_dir)
 
@@ -64,7 +56,7 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, log_dir):
         model.generator.eval()
         model.discriminator.eval()
         val_loss = validation_loss(model, criterion)
-        val_losses.append(val_loss)
+        val_losses.append(val_loss.item())
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
