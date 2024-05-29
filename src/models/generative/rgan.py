@@ -78,7 +78,7 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, log_dir):
     
     writer.close()
 
-    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", gen_losses, disc_losses, val_losses)
+    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", gen_losses, disc_losses)
 
     return best_val_loss
     
@@ -152,11 +152,10 @@ def discriminator_loss(model: GenModel, optimizer_discriminator: torch.optim.Ada
     # Track loss
     return loss_discriminator.item()
   
-def plot_losses(path, train_loss_gen, train_loss_disc, val_loss_gen):
+def plot_losses(path, train_loss_gen, train_loss_disc):
     plt.figure(figsize=(10, 5))
     plt.plot(train_loss_gen, marker='o', linestyle='-', label='train loss generator')
     plt.plot(train_loss_disc, marker='o', linestyle='-', label='train loss discriminator')
-    plt.plot(val_loss_gen, marker='o', linestyle='-', label='val loss generator')
 
     plt.title('Loss Over Epochs')
     plt.xlabel('Epoch')
