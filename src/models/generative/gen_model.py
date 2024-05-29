@@ -34,7 +34,7 @@ class GenModel():
         self.num_events = hyperparams["num_events"]
         self.num_features = hyperparams["num_features"]
 
-        self.output_path = "outputs/"
+        self.output_path = "outputs/genmodels"
 
     def generate_noise(self, samples: int):
         """
