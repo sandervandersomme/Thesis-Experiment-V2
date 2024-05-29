@@ -38,5 +38,7 @@ downstream_model_params = {
     "hidden_dim": 10,
     "num_layers": 1,
     "epochs": 50,
-    "learning_rate": 0.001
+    "learning_rate": 0.001,
+    "patience": 5,
+    "min_delta": 0.05,
 }
