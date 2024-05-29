@@ -10,7 +10,7 @@ from src.utilities.early_stopping import EarlyStopping
 
 class TimeseriesClassifier(DownstreamModel):
 
-    __NAME__ = "Classifier"
+    __NAME__ = "classifier"
     __PATH__ = f"outputs/{__NAME__}"
 
     def __init__(self, **hyperparams):
@@ -74,7 +74,8 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, val_data:
 
     writer.close()
     
-    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", train_losses, val_losses)
+    print(model.output_path)
+    plot_losses(f"{model.output_path}-loss", train_losses, val_losses)
 
     return best_val_loss
 

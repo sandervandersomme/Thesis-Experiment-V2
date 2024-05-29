@@ -11,7 +11,7 @@ from src.utilities.early_stopping import EarlyStopping
 
 class TimeseriesRegressor(DownstreamModel):
 
-    __NAME__ = "Regressor"
+    __NAME__ = "regressor"
 
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
@@ -48,7 +48,7 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Datas
         # Train model
         model.train()
         loss = train_loss(train_loader, model, optimizer, loss_fn)
-        train_losses.append(loss)
+        train_losses.append(loss.item())
 
         # Validate model
         model.eval()
@@ -75,7 +75,7 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Datas
     writer.close()
     
     # Visualise losses over epochs
-    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", train_losses, val_losses)
+    plot_losses(f"{model.output_path}-loss", train_losses, val_losses)
 
 def train_loss(train_loader: DataLoader, model: TimeseriesRegressor, optimizer: torch.optim.Adam, loss_fn: nn.MSELoss):
     loss = 0
