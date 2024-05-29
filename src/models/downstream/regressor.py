@@ -27,7 +27,6 @@ class TimeseriesRegressor(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
     
-
 def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Dataset, log_dir):
     writer = SummaryWriter(log_dir)
 
@@ -44,54 +43,85 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Datas
     train_losses = []
     val_losses = []
 
-    # Train for epochs
+    # Start training loop
     for epoch in range(model.epochs):
+        # Train model
         model.train()
+        loss = train_loss(train_loader, model, optimizer, loss_fn)
+        train_losses.append(loss)
 
-        total_loss = 0
-        for _, (sequences, labels) in enumerate(train_loader):
+        # Validate model
+        model.eval()
+        val_loss = validation_loss(val_loader, model, loss_fn)
+        val_losses.append(val_loss)
+
+        # Check for early stopping
+        early_stopping(val_loss)
+        if early_stopping.early_stop:
+            print(f"Early stopping at epoch {epoch+1}")
+            writer.close()
+            break
+
+        # Check if best loss has increased (for hyperparameter optimization)
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+
+        # Log losses to TensorBoard
+        writer.add_scalar("Loss/train", loss, epoch)
+        writer.add_scalar("Loss/validation", val_loss, epoch)
+
+        print(f'Epoch {epoch+1}/{model.epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
+
+    writer.close()
+    
+    # Visualise losses over epochs
+    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", train_losses, val_losses)
+
+def train_loss(train_loader: DataLoader, model: TimeseriesRegressor, optimizer: torch.optim.Adam, loss_fn: nn.MSELoss):
+    loss = 0
+    for _, (sequences, labels) in enumerate(train_loader):
+        sequences, labels = sequences.to(model.device), labels.to(model.device)
+
+        # Forward pass and loss calculation
+        predicted_labels = model.forward(sequences)
+        loss = loss_fn(predicted_labels, labels)
+
+        # Backpropogation
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        loss += loss.item()  # Sum up loss for averaging later
+
+    average_loss = loss / len(train_loader)
+    return average_loss
+
+def validation_loss(val_loader: DataLoader, model:TimeseriesRegressor, loss_fn: nn.MSELoss):
+    val_loss = 0
+    with torch.no_grad():
+        for _, (sequences, labels) in enumerate(val_loader):
             sequences, labels = sequences.to(model.device), labels.to(model.device)
 
+            # Calculate validation loss
+            outputs = model(sequences)
+            loss = loss_fn(outputs, labels)
 
-            predicted_labels = model.forward(sequences)
+            val_loss += loss.item()
 
-            loss = loss_fn(predicted_labels, labels)
+    avg_val_loss = val_loss / len(val_loader)
+    return avg_val_loss
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            total_loss += loss.item()  # Sum up loss for averaging later
-
-        average_loss = total_loss / len(train_loader)
-        train_losses.append(average_loss)
-
-        model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for _, (sequences, labels) in enumerate(val_loader):
-                sequences, labels = sequences.to(model.device), labels.to(model.device)
-
-                # Calculate validation loss
-                outputs = model(sequences)
-                loss = loss_fn(outputs, labels)
-
-                val_loss += loss.item()
-
-        avg_val_loss = val_loss / len(val_loader)
-        val_losses.append(avg_val_loss)
-
-        print(f'Epoch {epoch+1}/{model.epochs}, Average Loss: {average_loss}')
-    # plot_losses(path, losses)
-
-def plot_losses(path, losses):
+def plot_losses(path, train_losses, val_losses):
     plt.figure(figsize=(10, 5))
-    plt.plot(losses, marker='o', linestyle='-', label='loss regressor')
+    plt.plot(train_losses, marker='o', linestyle='-', label='train loss regressor')
+    plt.plot(val_losses, marker='o', linestyle='-', label='validation loss regressor')
+
     plt.title('Loss Over Epochs')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
     plt.grid(True)
 
     plt.savefig(path)
+    plt.close()
 
 

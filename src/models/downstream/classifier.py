@@ -48,66 +48,75 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, val_data:
     for epoch in range(model.epochs):
         model.train()
 
-        train_loss = 0
-        for _, (sequences, labels) in enumerate(train_loader):
-            sequences, labels = sequences.to(model.device), labels.to(model.device)
-            optimizer.zero_grad()
-
-            # Forward pass
-            outputs = model(sequences)
-            loss = loss_fn(outputs, labels)
-
-            # Backpropagation
-            loss.backward()
-            optimizer.step()
-
-            train_loss += loss.item() # Sum up loss for averaging later
-
-        avg_train_loss = train_loss / len(train_loader)
-        train_losses.append(avg_train_loss)
+        loss = train_loss(train_loader, model, optimizer, loss_fn)
+        train_losses.append(loss)
 
         model.eval()
-        val_loss = 0
-        with torch.no_grad():
-            for _, (sequences, labels) in enumerate(val_loader):
-                sequences, labels = sequences.to(model.device), labels.to(model.device)
-
-                # Calculate validation loss
-                outputs = model(sequences)
-                loss = loss_fn(outputs, labels)
-
-                val_loss += loss.item()
-
-        avg_val_loss = val_loss / len(val_loader)
-        val_losses.append(avg_val_loss)
+        val_loss = validation_loss(val_loader, model, loss_fn)
+        val_losses.append(val_loss)
 
         # Check for early stopping
-        early_stopping(avg_val_loss)
+        early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
             writer.close()
             break
 
         # Check if best loss has increased
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
 
         # Log losses to TensorBoard
-        writer.add_scalar("Loss/train", avg_train_loss, epoch)
-        writer.add_scalar("Loss/validation", avg_val_loss, epoch)
+        writer.add_scalar("Loss/train", loss, epoch)
+        writer.add_scalar("Loss/validation", val_loss, epoch)
 
-        print(f'Epoch {epoch+1}/{model.epochs}, Avg. train Loss: {avg_train_loss}, Avg. val Loss: {avg_val_loss}')
+        print(f'Epoch {epoch+1}/{model.epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
 
     writer.close()
     
-    plot_losses(f"{model.output_path}/train-loss", train_losses)
-    plot_losses(f"{model.output_path}/val-loss", val_losses)
+    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", train_losses, val_losses)
 
     return best_val_loss
 
-def plot_losses(path, losses):
+def train_loss(train_loader: DataLoader, model: TimeseriesClassifier, optimizer: torch.optim.Adam, loss_fn: nn.BCEWithLogitsLoss):
+    train_loss = 0
+    for _, (sequences, labels) in enumerate(train_loader):
+        sequences, labels = sequences.to(model.device), labels.to(model.device)
+        optimizer.zero_grad()
+
+        # Forward pass
+        outputs = model(sequences)
+        loss = loss_fn(outputs, labels)
+
+        # Backpropagation
+        loss.backward()
+        optimizer.step()
+
+        train_loss += loss.item() # Sum up loss for averaging later
+
+    avg_train_loss = train_loss / len(train_loader)
+    return avg_train_loss
+
+def validation_loss(val_loader: DataLoader, model: TimeseriesClassifier, loss_fn: nn.BCEWithLogitsLoss):
+    val_loss = 0
+    with torch.no_grad():
+        for _, (sequences, labels) in enumerate(val_loader):
+            sequences, labels = sequences.to(model.device), labels.to(model.device)
+
+            # Calculate validation loss
+            outputs = model(sequences)
+            loss = loss_fn(outputs, labels)
+
+            val_loss += loss.item()
+
+    avg_val_loss = val_loss / len(val_loader)
+    return avg_val_loss
+
+def plot_losses(path, train_losses, val_losses):
     plt.figure(figsize=(10, 5))
-    plt.plot(losses, marker='o', linestyle='-', label='loss classifier')
+    plt.plot(train_losses, marker='o', linestyle='-', label='Train loss classifier')
+    plt.plot(val_losses, marker='o', linestyle='-', label='Validation loss classifier')
+
     plt.title('Loss Over Epochs')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
