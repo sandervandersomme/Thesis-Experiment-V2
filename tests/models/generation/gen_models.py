@@ -2,39 +2,47 @@ import torch
 from typing import Callable
 
 # Load models
-from src.models.generative.gen_model import GenModel
-from src.models.generative.rgan import RGAN, train_RGAN, RGAN_params
-from src.models.generative.rwgan import RWGAN, train_RWGAN, RWGAN_params
-from src.models.generative.timegan import TimeGAN, train_TimeGAN, TimeGAN_params
+from src.models.generative.gen_model import GenModel, gen_params
+from src.models.generative.rgan import RGAN, train_RGAN
+from src.models.generative.rwgan import RWGAN, train_RWGAN
+from src.models.generative.timegan import TimeGAN, train_TimeGAN
 
 # Load datasets
 from torch.utils.data import Dataset
-from src.data.cf import CF
-from src.data.cf_classification import CF_Classification
-
-RGANpath = f"outputs/testing/RGAN/_"
-RWGANpath = f"outputs/testing/RWGAN/_"
-TimeGANpath = f"outputs/testing/TimeGAN/"
+from src.data.data_loader import select_data
 
 EPOCHS = 10
 
-def train_and_generate(dataset: Dataset, model_class: GenModel, train_func: Callable, path: str, **params: dict):
-    model = model_class(dataset.sequences.shape, **params)
-    train_func(model, dataset, path)
+def train_and_generate(dataset: Dataset, model_class: GenModel, train_func: Callable, epochs, **params: dict):
+    # Update parameters
+    gen_params["epochs"] = epochs
+    gen_params["min_delta"] = 0.2
+    gen_params["patience"] = 50
+    gen_params.update(params)
+    gen_params.update({
+        "num_sequences": dataset.sequences.shape[0],
+        "num_events": dataset.sequences.shape[1],
+        "num_features": dataset.sequences.shape[2]
+    })
+
+    # Configure outputs paths
+    model = model_class(**gen_params)
+    model.output_path = f"outputs/testing/genmodels/"
+    log_dir = f"runs/testing/{model.__NAME__}/"
+
+    # Train model
+    train_func(model, dataset, log_dir)
     syndata = model.generate_data(1000)
 
-    torch.save(syndata, f"outputs/testing/{model.__MODEL__}/syn.pt")
+    torch.save(syndata, f"outputs/testing/genmodels/{model.__NAME__}/syndata")
 
 if __name__ == "__main__":
     
-    cf = CF()
+    dataset = select_data("cf")
+    epochs = 1000
 
-    RGAN_params["epochs"] = 10
-    RWGAN_params["epochs"] = 10
-    TimeGAN_params["epochs"] = 10
-# 
-    # train_and_generate(cf, RGAN, train_RGAN, RGANpath, **RGAN_params)
-    train_and_generate(cf, RWGAN, train_RWGAN, RWGANpath, **RWGAN_params)
-    train_and_generate(cf, TimeGAN, train_TimeGAN, TimeGANpath, **TimeGAN_params)
+    # train_and_generate(dataset, RGAN, train_RGAN, epochs)
+    train_and_generate(dataset, RWGAN, train_RWGAN, epochs, **RWGAN_params)
+    # train_and_generate(dataset, TimeGAN, train_TimeGAN, epochs, **TimeGAN_params)
 
     

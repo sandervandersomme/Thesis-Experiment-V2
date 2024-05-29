@@ -6,7 +6,7 @@ import torch
 
 if __name__ == "__main__":
     # Load data
-    dataset = select_data("cf_classification")
+    dataset = select_data("cf")
     numseq, numev, numfeat = dataset.sequences.shape
 
     # Load parameters
