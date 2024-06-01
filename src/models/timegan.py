@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-from src.models.generative.gan import Generator, Discriminator
-from src.models.generative.gen_model import GenModel
+from src.models.gan import Generator, Discriminator
+from src.models.gen_model import GenModel
 
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
-from src.utilities.early_stopping import EarlyStopping
+from src.utilities.training.early_stopping import EarlyStopping
 
 
 class Embedder(nn.Module):
@@ -60,7 +60,7 @@ class TimeGAN(GenModel):
     Time-series GAN consisting of a generator, discriminator, embedder and recovery function.
     """
     
-    __NAME__ = "TimeGAN"
+    NAME = "timegan"
 
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
@@ -86,7 +86,7 @@ class TimeGAN(GenModel):
             generated_data = self.recovery(supervised_embeddings)
             return generated_data    
 
-def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, log_dir: str, val_data: Dataset, ):
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, log_run_dir: str, log_loss_dir: str, val_data: Dataset):
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
@@ -113,14 +113,14 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, log_dir: str, val_da
     model.discriminator.train()
 
     # Train
-    train_embedding_network(model, train_loader, val_loader, embedder_optimizer, recovery_optimizer, mse_loss, log_dir=f"{log_dir}/embedding/")
-    train_supervised(model, train_loader, val_loader, supervisor_optimizer, generator_optimizer, mse_loss, log_dir=f"{log_dir}/supervised/")
-    best_val_loss = train_joint(model, train_loader, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss, log_dir=f"{log_dir}/joint/")
+    train_embedding_network(model, train_loader, val_loader, embedder_optimizer, recovery_optimizer, mse_loss, log_run_dir, log_loss_dir)
+    train_supervised(model, train_loader, val_loader, supervisor_optimizer, generator_optimizer, mse_loss, log_run_dir, log_loss_dir)
+    best_val_loss = train_joint(model, train_loader, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss, log_run_dir, log_loss_dir)
 
     return best_val_loss
 
-def train_embedding_network(model: TimeGAN, train_loader: DataLoader, val_loader: DataLoader, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_dir:str):
-    writer = SummaryWriter(log_dir)
+def train_embedding_network(model: TimeGAN, train_loader: DataLoader, val_loader: DataLoader, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str, log_loss_dir: str):
+    writer = SummaryWriter(f"{log_run_dir}embedding/")
     
     # Train embedder and recovery: minimize construction loss
     print('Start Training Phase 1: Minimize reconstruction loss')
@@ -167,10 +167,10 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, val_loader
 
     writer.close()
 
-    plot_reconstruction_loss(f"{model.output_path}/{model.__NAME__}", train_losses, val_losses)
+    plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses, val_losses)
 
-def train_supervised(model: TimeGAN, train_loader: DataLoader, val_loader: DataLoader, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_dir:str):
-    writer = SummaryWriter(log_dir)
+def train_supervised(model: TimeGAN, train_loader: DataLoader, val_loader: DataLoader, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str, log_loss_dir: str):
+    writer = SummaryWriter(f"{log_run_dir}embedding/")
     
     # Training phase 2: Minimize supervised loss
     print('Start Training Phase 2: Minimize unsupervised loss')
@@ -214,10 +214,10 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, val_loader: DataL
 
     writer.close()
 
-    plot_supervised_loss(f"{model.output_path}/{model.__NAME__}", train_losses, val_losses)
+    plot_supervised_loss(f"{log_loss_dir}supervised_loss.png", train_losses, val_losses)
     
-def train_joint(model: TimeGAN, train_loader: DataLoader, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_dir:str):
-    writer = SummaryWriter(log_dir)
+def train_joint(model: TimeGAN, train_loader: DataLoader, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_run_dir:str, log_loss_dir: str):
+    writer = SummaryWriter(f"{log_run_dir}joint/")
     
     # Training phase 3: Joint training
     print('Start Training Phase 3: Joint training')
@@ -289,8 +289,8 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, supervisor_optimizer: 
 
     writer.close()
 
-    plot_disc_losses(f"{model.output_path}/{model.__NAME__}", disc_losses, val_losses)
-    plot_joint_losses(f"{model.output_path}/{model.__NAME__}", gen_losses, emb_losses, val_losses)
+    plot_disc_losses(f"{log_loss_dir}disc_loss.png", disc_losses, val_losses)
+    plot_joint_losses(f"{log_loss_dir}joint_loss.png", gen_losses, emb_losses, val_losses)
 
     return best_val_loss
 
@@ -522,7 +522,7 @@ def plot_reconstruction_loss(path: str, train_losses, val_losses):
     plt.grid(True)
     plt.legend()
 
-    plt.savefig(f"{path}/reconstruction")  # Save the figure to a file
+    plt.savefig(f"{path}")  # Save the figure to a file
     plt.close()
 
 def plot_supervised_loss(path: str, train_losses, val_losses):
@@ -537,7 +537,7 @@ def plot_supervised_loss(path: str, train_losses, val_losses):
     plt.grid(True)
     plt.legend()
 
-    plt.savefig(f"{path}/supervised")  # Save the figure to a file
+    plt.savefig(f"{path}") # Save the figure to a file
     plt.close()
 
 def plot_disc_losses(path: str, losses_disc, val_losses):
@@ -550,9 +550,8 @@ def plot_disc_losses(path: str, losses_disc, val_losses):
     plt.grid(True)
     plt.legend()
 
-    plt.savefig(f"{path}/disc")  # Save the figure to a file
+    plt.savefig(f"{path}")  # Save the figure to a file
     plt.close()
-
 
 def plot_joint_losses(path: str, losses_gen, losses_emb, val_losses):
     plt.figure(figsize=(10, 5))
@@ -567,6 +566,6 @@ def plot_joint_losses(path: str, losses_gen, losses_emb, val_losses):
     plt.grid(True)
     plt.legend()
 
-    plt.savefig(f"{path}/Joint")  # Save the figure to a file
+    plt.savefig(f"{path}")  # Save the figure to a file
     plt.close()
 

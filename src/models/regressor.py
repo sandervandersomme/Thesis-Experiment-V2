@@ -1,24 +1,24 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
-
 import matplotlib.pyplot as plt
 
 from torch.utils.tensorboard import SummaryWriter
-from src.models.downstream.downsteam_model import DownstreamModel
-from src.utilities.early_stopping import EarlyStopping
+from torch.utils.data import DataLoader, Dataset
 
-class TimeseriesClassifier(DownstreamModel):
+from src.models.downsteam_model import DownstreamModel
+from src.utilities.training.early_stopping import EarlyStopping
 
-    __NAME__ = "classifier"
-    __PATH__ = f"outputs/{__NAME__}"
+
+class TimeseriesRegressor(DownstreamModel):
+
+    NAME = "regressor"
 
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
-        # Architecture
+
         self.gru = nn.GRU(self.num_features, self.hidden_dim, num_layers=self.num_layers, batch_first=True)
         self.fc = nn.Linear(self.hidden_dim, 1)
-        
+
         # Send model to device
         self.to(self.device)
 
@@ -26,12 +26,11 @@ class TimeseriesClassifier(DownstreamModel):
         output, _ = self.gru(sequences)
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
+    
+def train_regressor(model: DownstreamModel, train_data: Dataset, log_run_dir: str, log_loss_dir: str, val_data: Dataset):
+    writer = SummaryWriter(log_run_dir)
 
-def train_classifier(model: TimeseriesClassifier, train_data: Dataset, log_dir, val_data: Dataset):
-    writer = SummaryWriter(log_dir)
-
-    # Setup training
-    loss_fn = nn.BCEWithLogitsLoss().to(model.device)
+    loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=model.learning_rate)
     train_loader = DataLoader(train_data, batch_size=model.batch_size, shuffle=True)
     val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
@@ -44,13 +43,14 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, log_dir, 
     train_losses = []
     val_losses = []
 
-    # Train loop
+    # Start training loop
     for epoch in range(model.epochs):
+        # Train model
         model.train()
-
         loss = train_loss(train_loader, model, optimizer, loss_fn)
-        train_losses.append(loss)
+        train_losses.append(loss.item())
 
+        # Validate model
         model.eval()
         val_loss = validation_loss(val_loader, model, loss_fn)
         val_losses.append(val_loss)
@@ -62,7 +62,7 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, log_dir, 
             writer.close()
             break
 
-        # Check if best loss has increased
+        # Check if best loss has increased (for hyperparameter optimization)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
@@ -74,31 +74,29 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, log_dir, 
 
     writer.close()
     
-    print(model.output_path)
-    plot_losses(f"{model.output_path}-loss", train_losses, val_losses)
+    # Visualise losses over epochs
+    plot_losses(f"{log_loss_dir}loss.png", train_losses, val_losses)
 
-    return best_val_loss
-
-def train_loss(train_loader: DataLoader, model: TimeseriesClassifier, optimizer: torch.optim.Adam, loss_fn: nn.BCEWithLogitsLoss):
-    train_loss = 0
+def train_loss(train_loader: DataLoader, model: TimeseriesRegressor, optimizer: torch.optim.Adam, loss_fn: nn.MSELoss):
+    loss = 0
     for _, (sequences, labels) in enumerate(train_loader):
         sequences, labels = sequences.to(model.device), labels.to(model.device)
+
+        # Forward pass and loss calculation
+        predicted_labels = model.forward(sequences)
+        loss = loss_fn(predicted_labels, labels)
+
+        # Backpropogation
         optimizer.zero_grad()
-
-        # Forward pass
-        outputs = model(sequences)
-        loss = loss_fn(outputs, labels)
-
-        # Backpropagation
         loss.backward()
         optimizer.step()
 
-        train_loss += loss.item() # Sum up loss for averaging later
+        loss += loss.item()  # Sum up loss for averaging later
 
-    avg_train_loss = train_loss / len(train_loader)
-    return avg_train_loss
+    average_loss = loss / len(train_loader)
+    return average_loss
 
-def validation_loss(val_loader: DataLoader, model: TimeseriesClassifier, loss_fn: nn.BCEWithLogitsLoss):
+def validation_loss(val_loader: DataLoader, model:TimeseriesRegressor, loss_fn: nn.MSELoss):
     val_loss = 0
     with torch.no_grad():
         for _, (sequences, labels) in enumerate(val_loader):
@@ -115,8 +113,8 @@ def validation_loss(val_loader: DataLoader, model: TimeseriesClassifier, loss_fn
 
 def plot_losses(path, train_losses, val_losses):
     plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, marker='o', linestyle='-', label='Train loss classifier')
-    plt.plot(val_losses, marker='o', linestyle='-', label='Validation loss classifier')
+    plt.plot(train_losses, marker='o', linestyle='-', label='train loss regressor')
+    plt.plot(val_losses, marker='o', linestyle='-', label='validation loss regressor')
 
     plt.title('Loss Over Epochs')
     plt.xlabel('Epoch')
@@ -124,5 +122,7 @@ def plot_losses(path, train_losses, val_losses):
     plt.grid(True)
     plt.legend()
 
-    plt.savefig(path)  # Save the figure to a file
+    plt.savefig(path)
     plt.close()
+
+

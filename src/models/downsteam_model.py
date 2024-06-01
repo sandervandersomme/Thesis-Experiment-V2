@@ -2,11 +2,13 @@ import torch
 import torch.nn as nn
 from src.utilities.utils import set_device
 
+from src.paths import PATH_MODEL, TEST_PATH_MODEL
+
 class DownstreamModel(nn.Module):
 
     __NAME__ = None
 
-    def __init__(self, **hyperparams):
+    def __init__(self, test:bool=True, **hyperparams):
         super().__init__()
 
         # torch settings
@@ -31,7 +33,8 @@ class DownstreamModel(nn.Module):
         self.num_events = hyperparams["num_events"]
         self.num_features = hyperparams["num_features"]
 
-        self.output_path = "outputs/"
+        if test: self.output_path = TEST_PATH_MODEL
+        else: self.output_path = PATH_MODEL
   
 downstream_model_params = {
     "batch_size": 5,

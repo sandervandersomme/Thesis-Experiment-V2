@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 
-from src.models.generative.gen_model import GenModel
-from src.models.generative.gan import Generator
-from src.utilities.early_stopping import EarlyStopping
+from src.models.gen_model import GenModel
+from src.models.gan import Generator
+from src.utilities.training.early_stopping import EarlyStopping
 
 class Critic(nn.Module):
     """
@@ -29,7 +29,7 @@ class RWGAN(GenModel):
     A Recurrent GAN consisting of a generator and discriminator.
     """
 
-    __NAME__ = "RWGAN"
+    NAME = "rwgan"
         
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
@@ -52,8 +52,8 @@ class ClipConstraint():
         for p in model.parameters():
             p.data.clamp_(-self.clip_value, self.clip_value)
 
-def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_dir: str):
-    writer = SummaryWriter(log_dir)
+def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_run_dir: str, log_loss_dir: str):
+    writer = SummaryWriter(log_run_dir)
 
     # Setup training
     optimizer_generator = torch.optim.RMSprop(model.generator.parameters(), lr=model.learning_rate)
@@ -109,7 +109,7 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_dir: str):
 
     writer.close()
 
-    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", gen_losses, critic_losses)
+    plot_losses(f"{log_loss_dir}loss.png", gen_losses, critic_losses)
 
     return best_val_loss
 

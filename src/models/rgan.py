@@ -3,18 +3,18 @@ import torch.nn as nn
 import matplotlib.pyplot as plt
 
 from torch.utils.tensorboard import SummaryWriter
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 
-from src.models.generative.gan import Generator, Discriminator
-from src.models.generative.gen_model import GenModel
-from src.utilities.early_stopping import EarlyStopping
+from src.models.gan import Generator, Discriminator
+from src.models.gen_model import GenModel
+from src.utilities.training.early_stopping import EarlyStopping
 
 class RGAN(GenModel):
     """
     A Recurrent GAN consisting of a generator and discriminator.
     """
 
-    __NAME__ = "RGAN"
+    NAME = "rgan"
         
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
@@ -23,8 +23,8 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, log_dir):
-    writer = SummaryWriter(log_dir)
+def train_RGAN(model: RGAN, train_data: torch.Tensor, log_run_dir: str, log_loss_dir: str):
+    writer = SummaryWriter(log_run_dir)
 
     # Setup training
     half_batch = int(model.batch_size/2)
@@ -78,7 +78,7 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, log_dir):
     
     writer.close()
 
-    plot_losses(f"{model.output_path}/{model.__NAME__}/loss", gen_losses, disc_losses)
+    plot_losses(f"{log_loss_dir}loss.png", gen_losses, disc_losses)
 
     return best_val_loss
     

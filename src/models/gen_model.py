@@ -1,11 +1,13 @@
 import torch
 from src.utilities.utils import set_device
 
+from src.paths import TEST_PATH_MODEL, PATH_MODEL
+
 class GenModel():
 
-    __NAME__ = None
+    NAME = None
 
-    def __init__(self, **hyperparams):
+    def __init__(self, test:bool=True, **hyperparams):
         """
         - Sets device, seed, batch_size, num_events and num_features
         - Generates noise for generator
@@ -34,8 +36,10 @@ class GenModel():
         self.num_events = hyperparams["num_events"]
         self.num_features = hyperparams["num_features"]
 
-        self.output_path = f"outputs/genmodels"
-        self.logging_path = "runs/genmodels"
+        if test: self.output_path = TEST_PATH_MODEL
+        else: self.output_path = PATH_MODEL
+
+        self.logging_path = "runs/genmodels/"
 
     def generate_noise(self, samples: int):
         """
