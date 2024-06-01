@@ -1,9 +1,5 @@
-import torch
-from scipy.stats import ks_2samp, gaussian_kde
-from scipy.spatial.distance import jensenshannon
 from typing import List
 import matplotlib.pyplot as plt
-import numpy as np
 
 def visualise_ks(data: List[float], variables: List[str], y_label: str, path: str):
     # Creating the plot
