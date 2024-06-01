@@ -1,9 +1,8 @@
 import argparse
 import torch
 import numpy as np
-
-from torch.utils.data import TensorDataset, random_split
-
+import json
+import os
 
 HOSPITAL_COLS = ['DIABETES', 'LIVER_DISEASE', 'PANCREAS', 'PSEUDOMONAS', 
                  'EMERGENCY', 'NEBULIZED', 'ORAL', 'KAFTRIO', 'SYMKEVI', 
@@ -30,7 +29,6 @@ def parse_args():
     args = parser.parse_args()
     return args
 
-
 def set_device():
     device = (
         "cuda" if torch.cuda.is_available()
@@ -41,10 +39,28 @@ def set_device():
     print(f"Using {device} device")
     return device
 
-
 def handle_numpy(obj):
     if isinstance(obj, np.ndarray):
         return obj.tolist()  # Convert ndarray to list
     if isinstance(obj, np.generic):
         return obj.item()
-    
+
+def create_directory(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+def load_best_params_and_score(path):
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            best_trial = json.load(f)
+        return best_trial
+    else:
+        return None
+
+def save_trial(trial, path):
+    best_trial_data = {
+        'params': trial.params,
+        'value': trial.value
+    }
+    with open(path, 'w') as f:
+        json.dump(best_trial_data, f)
