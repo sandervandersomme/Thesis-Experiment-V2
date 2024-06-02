@@ -1,17 +1,15 @@
 import optuna
-import os
-import json
 
 from torch.utils.data import Dataset, Subset
 from sklearn.model_selection import KFold
 
-from src.utilities.training.hyperparameters import get_grid
+from src.training.hyperparameters import get_grid
 from src.utilities.utils import create_directory
 from src.models.models import train_model
 
 from datetime import datetime
 
-def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int):
+def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, moment):
     
     # Set hyperparameter grid
     hyperparams = get_grid(model_class, trial)
@@ -31,10 +29,9 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int):
         
         model = model_class(**hyperparams)
 
-        moment = datetime.now().strftime('%Y-%m-%d_%H-%M')
         # Set paths and create directories
-        fold_log_dir = f"{path}runs/{dataset.NAME}-{model.NAME}/{moment}/trial_{trial.number}_fold_{fold}/"
-        loss_log_dir = f"{path}losses/{dataset.NAME}-{model.NAME}/{moment}/trial_{trial.number}_fold_{fold}/"
+        fold_log_dir = f"{path}/runs/{dataset.NAME}-{model.NAME}/{moment}/trial_{trial.number}_fold_{fold}/"
+        loss_log_dir = f"{path}/losses/{dataset.NAME}-{model.NAME}/{moment}/trial_{trial.number}_fold_{fold}/"
         create_directory(fold_log_dir)
         create_directory(loss_log_dir)
 
@@ -43,13 +40,16 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int):
 
         val_losses.append(fold_val_loss)
 
+
     avg_val_loss = sum(val_losses) / len(val_losses)
     return avg_val_loss
 
 
 def optimize_hyperparameters(dataset, model, output_path: str, n_trials=10, n_folds=5):
+    moment = datetime.now().strftime('%Y-%m-%d_%H-%M')
+
     study = optuna.create_study(direction="minimize")
-    study.optimize(lambda trial: objective(model, trial, dataset, output_path, n_folds), n_trials=n_trials)
+    study.optimize(lambda trial: objective(model, trial, dataset, output_path, n_folds, moment), n_trials=n_trials)
 
     return study.best_trial
 
