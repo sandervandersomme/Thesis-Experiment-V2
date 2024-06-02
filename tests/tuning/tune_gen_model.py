@@ -1,7 +1,7 @@
 import argparse
 
 from src.data.data_loader import select_data
-from src.utilities.training.tuning import optimize_hyperparameters
+from src.training.tuning import optimize_hyperparameters
 
 from src.models.models import select_model
 from src.paths import TEST_PATH_HYPERPARAMS, PATH_HYPERPARAMS
