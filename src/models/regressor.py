@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
 
 from src.models.downsteam_model import DownstreamModel
-from src.utilities.training.early_stopping import EarlyStopping
+from src.training.early_stopping import EarlyStopping
 
 
 class TimeseriesRegressor(DownstreamModel):
@@ -77,6 +77,8 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, log_run_dir: st
     # Visualise losses over epochs
     plot_losses(f"{log_loss_dir}loss.png", train_losses, val_losses)
 
+    return best_val_loss
+
 def train_loss(train_loader: DataLoader, model: TimeseriesRegressor, optimizer: torch.optim.Adam, loss_fn: nn.MSELoss):
     loss = 0
     for _, (sequences, labels) in enumerate(train_loader):
@@ -100,6 +102,7 @@ def validation_loss(val_loader: DataLoader, model:TimeseriesRegressor, loss_fn: 
     val_loss = 0
     with torch.no_grad():
         for _, (sequences, labels) in enumerate(val_loader):
+            
             sequences, labels = sequences.to(model.device), labels.to(model.device)
 
             # Calculate validation loss

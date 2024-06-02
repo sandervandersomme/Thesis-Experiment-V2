@@ -7,7 +7,7 @@ from src.models.gen_model import GenModel
 
 from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
-from src.utilities.training.early_stopping import EarlyStopping
+from src.training.early_stopping import EarlyStopping
 
 
 class Embedder(nn.Module):

@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 from src.models.gen_model import GenModel
 from src.models.gan import Generator
-from src.utilities.training.early_stopping import EarlyStopping
+from src.training.early_stopping import EarlyStopping
 
 class Critic(nn.Module):
     """

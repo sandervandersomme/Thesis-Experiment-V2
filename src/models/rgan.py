@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 from src.models.gan import Generator, Discriminator
 from src.models.gen_model import GenModel
-from src.utilities.training.early_stopping import EarlyStopping
+from src.training.early_stopping import EarlyStopping
 
 class RGAN(GenModel):
     """
