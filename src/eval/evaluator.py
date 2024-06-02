@@ -1,6 +1,6 @@
 import torch
 
-from typing import List, Callable
+from typing import List
 
 from eval.metric import Metric
 

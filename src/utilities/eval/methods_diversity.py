@@ -1,3 +1,0 @@
-diversity_methods = [
-    
-]
