@@ -4,7 +4,7 @@ import torch
 import pandas as pd
 
 class CF(Dataset):
-    PATH_SEQUENCES = "data/processed/cf_full.csv"
+    PATH_SEQUENCES = "datasets/processed/cf_full.csv"
     NAME = "cf"
 
     def __init__(self):
