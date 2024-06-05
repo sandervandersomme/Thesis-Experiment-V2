@@ -14,6 +14,8 @@ class GenModel():
         - Generates synthetic data using generator
         """
 
+        self.hyperparams = hyperparams
+
         # torch settings
         self.device = hyperparams.get("device", set_device())
 
