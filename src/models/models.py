@@ -31,7 +31,7 @@ gen_models = {
     "timegan": TimeGAN
 }
 
-def select_model(model: str) -> DownstreamModel:
+def select_downstream_model(model: str) -> DownstreamModel:
     return downstream_models[model]
 
 def select_gen_model(model: str) -> GenModel:
