@@ -7,3 +7,5 @@ PATH_MODEL = "outputs/models/"
 
 PATH_EXP1_TUNED = "outputs/experiments/1/tuned"
 PATH_EXP1_UNTUNED = "outputs/experiments/1/untuned"
+
+PATH_SYNDATA = "outputs/syndata/"
