@@ -1,3 +1,5 @@
+import torch
+
 from src.models.regressor import TimeseriesRegressor, train_regressor
 from src.models.classifier import TimeseriesClassifier, train_classifier
 
@@ -8,17 +10,17 @@ from src.models.timegan import TimeGAN, train_TimeGAN
 from src.models.gen_model import GenModel
 from src.models.downsteam_model import DownstreamModel
 
-def train_model(model, train_data, log_run_dir: str, log_loss_dir: str, val_data=None):
+def train_model(model, train_data: torch.Tensor, val_data: torch.Tensor=None, log_run_dir: str=None, log_loss_dir: str=None):
     if isinstance(model, RGAN):
         return train_RGAN(model, train_data, log_run_dir, log_loss_dir)
     elif isinstance(model, TimeGAN):
-        return train_TimeGAN(model, train_data, log_run_dir, log_loss_dir, val_data)
+        return train_TimeGAN(model, train_data, val_data, log_run_dir, log_loss_dir)
     elif isinstance(model, RWGAN):
         return train_RWGAN(model, train_data, log_run_dir, log_loss_dir)
     elif isinstance(model, TimeseriesClassifier):
-        return train_classifier(model, train_data, log_run_dir, log_loss_dir, val_data)
+        return train_classifier(model, train_data, val_data, log_run_dir, log_loss_dir)
     elif isinstance(model, TimeseriesRegressor):
-        return train_regressor(model, train_data, log_run_dir, log_loss_dir, val_data)
+        return train_regressor(model, train_data, val_data, log_run_dir, log_loss_dir)
     
 downstream_models = {
     "classifier": TimeseriesClassifier,
