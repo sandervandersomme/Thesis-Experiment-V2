@@ -57,20 +57,6 @@ def get_default_params(model: str, shape):
     params = add_shape_to_params(params, shape)
     return params
 
-def select_hyperparams(model, tuned_params:bool=True):
-    """
-    This function returns the hyperparams for the given model.
-    If optimal parameters exist, those are returned.
-    If they don't exist, but tuned_params is True, the model is tuned first.
-    If they don't exist, and tuned_params if False, the model returns default parameters.
-    """
-    
-    # TODO: Check if tuned params exist
-    pass
-
-    # TODO: If they don't exist, if tuned_params is true, tune the model
-    # TODO: If they don't exist, if tuned_params is false, return default parameters
-
 
 default_params = { 
     "batch_size": 5,
