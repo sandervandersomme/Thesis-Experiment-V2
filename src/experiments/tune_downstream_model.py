@@ -4,7 +4,7 @@ import argparse
 from src.paths import PATH_HYPERPARAMS
 
 # Import models
-from src.models.models import select_model
+from src.models.models import select_downstream_model
 
 # Import data
 from src.data.data_loader import select_data, create_downstream_dataset
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # Setup experiment
     dataset = select_data(args.dataset)
     dataset = create_downstream_dataset(dataset, args.task)
-    model_class = select_model(args.model)
+    model_class = select_downstream_model(args.model)
 
     # loading, tuning params
     path = PATH_HYPERPARAMS

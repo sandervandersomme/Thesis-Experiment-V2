@@ -6,7 +6,7 @@ import torch
 from src.paths import PATH_EXP1_UNTUNED, PATH_HYPERPARAMS
 
 # Import models and data
-from src.models.models import select_model, train_model
+from src.models.models import select_gen_model, train_model
 from src.models.gen_model import GenModel
 from src.data.data_loader import select_data
 
@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # Setup experiment
     dataset = select_data(args.dataset)
-    model_class = select_model(args.model)
+    model_class = select_gen_model(args.model)
     hyperparams = load_best_params_and_score(PATH_HYPERPARAMS + f"{dataset.NAME}-{model_class.NAME}.json")
 
     # Train model
