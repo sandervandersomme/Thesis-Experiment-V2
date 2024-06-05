@@ -23,7 +23,7 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, log_run_dir: str, log_loss_dir: str):
+def train_RGAN(model: RGAN, train_data: torch.Tensor, log_run_dir: str=None, log_loss_dir: str=None):
     writer = SummaryWriter(log_run_dir)
 
     # Setup training
