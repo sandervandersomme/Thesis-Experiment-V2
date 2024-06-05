@@ -5,6 +5,9 @@ from src.models.rgan import RGAN, train_RGAN
 from src.models.rwgan import RWGAN, train_RWGAN
 from src.models.timegan import TimeGAN, train_TimeGAN
 
+from src.models.gen_model import GenModel
+from src.models.downsteam_model import DownstreamModel
+
 def train_model(model, train_data, log_run_dir: str, log_loss_dir: str, val_data=None):
     if isinstance(model, RGAN):
         return train_RGAN(model, train_data, log_run_dir, log_loss_dir)
@@ -17,13 +20,19 @@ def train_model(model, train_data, log_run_dir: str, log_loss_dir: str, val_data
     elif isinstance(model, TimeseriesRegressor):
         return train_regressor(model, train_data, log_run_dir, log_loss_dir, val_data)
     
-models = {
-    "rgan": RGAN,
-    "rwgan": RWGAN,
-    "timegan": TimeGAN,
+downstream_models = {
     "classifier": TimeseriesClassifier,
     "regressor": TimeseriesRegressor
 }
 
-def select_model(model: str):
-    return models[model]
+gen_models = {
+    "rgan": RGAN,
+    "rwgan": RWGAN,
+    "timegan": TimeGAN
+}
+
+def select_model(model: str) -> DownstreamModel:
+    return downstream_models[model]
+
+def select_gen_model(model: str) -> GenModel:
+    return gen_models[model]
