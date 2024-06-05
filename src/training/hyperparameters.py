@@ -3,17 +3,20 @@ import os
 from src.models.models import RGAN, TimeGAN, RWGAN, TimeseriesClassifier, TimeseriesRegressor
 
 
-def get_grid(model_class, trial):
+def get_grid(model_class, trial, shape):
     if issubclass(model_class, RGAN):
-        return default_grid(trial)
+        grid = default_grid(trial)
     elif issubclass(model_class, TimeGAN):
-        return timegan_grid(trial)
+        grid = timegan_grid(trial)
     elif issubclass(model_class, RWGAN):
-        return rwgan_grid(trial)
+        grid = rwgan_grid(trial)
     elif issubclass(model_class, TimeseriesClassifier):
-        return default_grid(trial)
+        grid = default_grid(trial)
     elif issubclass(model_class, TimeseriesRegressor):
-        return default_grid(trial)
+        grid = default_grid(trial)
+
+    grid = add_shape_to_params(grid, shape)
+    return grid
 
 def default_grid(trial):
     return {
@@ -44,12 +47,14 @@ def rwgan_grid(trial):
     })
     return grid
 
-def get_default_params(model: str):
+def get_default_params(model: str, shape):
     params = default_params
     if model == 'timegan':
         params.update(TimeGAN_params)
     elif model == 'rwgan':
         params.update(RWGAN_params)
+
+    params = add_shape_to_params(params, shape)
     return params
 
 def select_hyperparams(model, tuned_params:bool=True):
