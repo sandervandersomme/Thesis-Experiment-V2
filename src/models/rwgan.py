@@ -22,7 +22,7 @@ class Critic(nn.Module):
 
     def forward(self, sequences: torch.Tensor):
         rnn_output, _ = self.rnn(sequences)
-        return self.output_layer(rnn_output)
+        return self.output_layer(rnn_output[:, -1, :])
 
 class RWGAN(GenModel):
     """

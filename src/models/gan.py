@@ -30,7 +30,6 @@ class Discriminator(nn.Module):
         self.rnn = nn.GRU(input_dim, hidden_dim, num_layers=num_layers, batch_first=True)
         self.output_layer = nn.Sequential(nn.Linear(hidden_dim, 1), nn.Sigmoid())
 
-
     def forward(self, sequences: torch.Tensor):
         rnn_output, _ = self.rnn(sequences)
-        return self.output_layer(rnn_output)
+        return self.output_layer(rnn_output[:,-1,:])
