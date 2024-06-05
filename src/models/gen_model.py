@@ -59,13 +59,3 @@ class GenModel():
         with torch.no_grad():
             return self.generator(noise)
         
-gen_params = {
-    "batch_size": 5,
-    "learning_rate": 0.0001,
-    "epochs": 10,
-    "hidden_dim": 10,
-    "num_layers": 1,
-    "latent_dim": 10,
-    "patience": 5,
-    "min_delta": 0.05,
-}
