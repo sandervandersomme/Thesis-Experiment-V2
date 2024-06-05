@@ -1,4 +1,7 @@
+import os
+
 from src.models.models import RGAN, TimeGAN, RWGAN, TimeseriesClassifier, TimeseriesRegressor
+
 
 def get_grid(model_class, trial):
     if issubclass(model_class, RGAN):
@@ -44,10 +47,25 @@ def rwgan_grid(trial):
 def get_default_params(model: str):
     params = default_params
     if model == 'timegan':
-        return params.update(TimeGAN_params)
+        params.update(TimeGAN_params)
     elif model == 'rwgan':
-        return params.update(RWGAN_params)
-    return default_params
+        params.update(RWGAN_params)
+    return params
+
+def select_hyperparams(model, tuned_params:bool=True):
+    """
+    This function returns the hyperparams for the given model.
+    If optimal parameters exist, those are returned.
+    If they don't exist, but tuned_params is True, the model is tuned first.
+    If they don't exist, and tuned_params if False, the model returns default parameters.
+    """
+    
+    # TODO: Check if tuned params exist
+    pass
+
+    # TODO: If they don't exist, if tuned_params is true, tune the model
+    # TODO: If they don't exist, if tuned_params is false, return default parameters
+
 
 default_params = { 
     "batch_size": 5,
@@ -72,3 +90,10 @@ RWGAN_params = {
     "clip_value": 0.05
 }
     
+def add_shape_to_params(hyperparams: dict, shape: tuple):
+    hyperparams.update({
+        "num_sequences": shape[0],
+        "num_events": shape[1],
+        "num_features": shape[2],
+    })
+    return hyperparams
