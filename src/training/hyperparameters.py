@@ -1,4 +1,6 @@
 import os
+import json
+from typing import Tuple
 
 from src.models.models import RGAN, TimeGAN, RWGAN, TimeseriesClassifier, TimeseriesRegressor
 
@@ -88,3 +90,20 @@ def add_shape_to_params(hyperparams: dict, shape: tuple):
         "num_features": shape[2],
     })
     return hyperparams
+
+def select_hyperparams(dataset: str, model: str, shape: Tuple):
+    file_path = f"outputs/hyperparams/{dataset}-{model}.json"
+    if file_exists(file_path):
+        hyperparams = load_params(file_path)
+        hyperparams = add_shape_to_params(hyperparams, shape)
+        return hyperparams
+    else: 
+        return get_default_params(model, shape)
+
+def file_exists(file_path: str): return os.path.isfile(file_path)
+
+def load_params(path): 
+    with open(path, 'r') as file: return json.load(file)["params"]
+
+if __name__ == "__main__":
+    select_hyperparams('rwgan', 'cf')
