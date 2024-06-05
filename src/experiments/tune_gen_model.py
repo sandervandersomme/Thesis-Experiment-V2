@@ -28,20 +28,20 @@ if __name__ == "__main__":
 
     # loading, tuning params
     path = PATH_HYPERPARAMS
-    suffix = f"/{dataset.NAME}-{model_class.NAME}.json"
+    suffix = f"{dataset.NAME}-{model_class.NAME}.json"
     saved_trial = load_best_params_and_score(PATH_HYPERPARAMS + suffix)
     new_trial = optimize_hyperparameters(dataset, model_class, path, args.trials, args.folds)
 
     # Saving params
     if saved_trial is None:
         print("Model has not been tuned before, saving hyperparameter..")
-        save_trial(new_trial, path)
+        save_trial(new_trial, path + suffix)
     else:
         print(f"Old score: {saved_trial["value"]}")
         print(f"New score: {new_trial.value}")
 
         if new_trial.value < saved_trial["value"]:
-            save_trial(new_trial, path)
+            save_trial(new_trial, path + suffix)
 
         print(f"Best hyperparameters: {new_trial.params}")
 
