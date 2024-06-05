@@ -4,7 +4,7 @@ import argparse
 from src.paths import PATH_HYPERPARAMS
 
 # Import models
-from src.models.models import select_model
+from src.models.models import select_gen_model
 
 # Import data
 from src.data.data_loader import select_data
@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
     # Setup experiment
     dataset = select_data(args.dataset)
-    model_class = select_model(args.model)
+    model_class = select_gen_model(args.model)
 
     # loading, tuning params
     path = PATH_HYPERPARAMS

@@ -3,7 +3,7 @@ import argparse
 from src.data.data_loader import select_data
 from src.training.tuning import optimize_hyperparameters
 
-from src.models.models import select_model
+from src.models.models import select_downstream_model
 from src.paths import TEST_PATH_HYPERPARAMS, PATH_HYPERPARAMS
 from src.utilities.utils import load_best_params_and_score, save_trial
 
@@ -66,14 +66,14 @@ def set_path(test):
 if __name__ == "__main__":
     # Parse arguments, path, models and dataset
     args = parse_args()
-    models = [select_model(model) for model in args.models]
+    models = [select_downstream_model(model) for model in args.models]
     dataset = select_data(args.dataset)
 
     # Loop through models
     for model_class in args.models:
         # Retrieve model class
         path = set_path(args.test)
-        model = select_model(model_class)
+        model = select_downstream_model(model_class)
 
         # Tune model
         tune_model(model, dataset, args.trials, args.folds, path)
