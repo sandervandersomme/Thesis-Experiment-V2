@@ -44,7 +44,7 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, mome
 
 def optimize_hyperparameters(dataset, model, output_path: str, n_trials=10, n_folds=5):
     moment = datetime.now().strftime('%Y-%m-%d_%H-%M')
-    storage = optuna.storages.RDBStorage(url=f'sqlite:///{dataset.NAME}-{model.NAME}.db')
+    storage = optuna.storages.RDBStorage(url=f'sqlite://outputs/hyperparams/{dataset.NAME}-{model.NAME}.db')
 
     study = optuna.create_study(study_name=f"{dataset.NAME}-{model.NAME}", direction="minimize", storage=storage, load_if_exists=True, pruner=MedianPruner)
     study.optimize(lambda trial: objective(model, trial, dataset, output_path, n_folds, moment), n_trials=n_trials)
