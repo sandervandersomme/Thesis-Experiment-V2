@@ -41,8 +41,6 @@ class GenModel():
         if test: self.output_path = TEST_PATH_MODEL
         else: self.output_path = PATH_MODEL
 
-        self.logging_path = "runs/genmodels/"
-
     def generate_noise(self, samples: int):
         """
         Method to generate noise.
