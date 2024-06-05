@@ -1,10 +1,11 @@
 import optuna
+from optuna.pruners import MedianPruner
 
 from torch.utils.data import Dataset, Subset
 from sklearn.model_selection import KFold
 
-from src.training.hyperparameters import get_grid
-from src.utilities.utils import create_directory
+from src.training.hyperparameters import get_grid, add_shape_to_params
+from src.utilities.utils import create_directory, save_trial
 from src.models.models import train_model
 
 from datetime import datetime
@@ -13,11 +14,7 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, mome
     
     # Set hyperparameter grid
     hyperparams = get_grid(model_class, trial)
-    hyperparams.update({
-        "num_sequences": dataset.sequences.shape[0],
-        "num_events": dataset.sequences.shape[1],
-        "num_features": dataset.sequences.shape[2],
-    })
+    hyperparams = add_shape_to_params(dataset.sequences.shape)
 
     kfold = KFold(n_splits=n_folds, shuffle=True, random_state=42)
     val_losses = []
@@ -47,8 +44,9 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, mome
 
 def optimize_hyperparameters(dataset, model, output_path: str, n_trials=10, n_folds=5):
     moment = datetime.now().strftime('%Y-%m-%d_%H-%M')
+    storage = optuna.storages.RDBStorage(url=f'sqlite:///{dataset.NAME}-{model.NAME}.db')
 
-    study = optuna.create_study(direction="minimize")
+    study = optuna.create_study(study_name=f"{dataset.NAME}-{model.NAME}", direction="minimize", storage=storage, load_if_exists=True, pruner=MedianPruner)
     study.optimize(lambda trial: objective(model, trial, dataset, output_path, n_folds, moment), n_trials=n_trials)
 
     return study.best_trial
