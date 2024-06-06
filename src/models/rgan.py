@@ -23,8 +23,9 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir: str=None, log_loss_dir: str=None):
-    writer = SummaryWriter(log_run_dir)
+def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir:str=None, log_loss_dir:str=None):
+    if log_run_dir:
+        writer = SummaryWriter(log_run_dir)
 
     # Setup training
     half_batch = int(model.batch_size/2)
@@ -70,15 +71,18 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir: 
             break
 
         # Logging losses
-        writer.add_scalar('Loss/disc', disc_loss, epoch)
-        writer.add_scalar('Loss/gen', gen_loss, epoch)
-        writer.add_scalar('Loss/val', val_loss, epoch)
+        if log_run_dir:
+            writer.add_scalar('Loss/disc', disc_loss, epoch)
+            writer.add_scalar('Loss/gen', gen_loss, epoch)
+            writer.add_scalar('Loss/val', val_loss, epoch)
 
         print(f"Epoch {epoch+1}/{epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
     
-    writer.close()
+    if log_run_dir:
+        writer.close()
 
-    plot_losses(f"{log_loss_dir}loss.png", gen_losses, disc_losses)
+    if log_loss_dir:
+        plot_losses(f"{log_loss_dir}loss.png", gen_losses, disc_losses)
 
     return best_val_loss
     

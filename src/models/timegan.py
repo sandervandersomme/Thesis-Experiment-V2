@@ -86,7 +86,7 @@ class TimeGAN(GenModel):
             generated_data = self.recovery(supervised_embeddings)
             return generated_data    
 
-def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, log_run_dir: str, log_loss_dir: str, val_data: Dataset):
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_data: Dataset, log_run_dir: str=None, log_loss_dir:str=None):
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
@@ -119,8 +119,9 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, log_run
 
     return best_val_loss
 
-def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, val_loader: DataLoader, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str, log_loss_dir: str):
-    writer = SummaryWriter(f"{log_run_dir}embedding/")
+def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, val_loader: DataLoader, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str=None, log_loss_dir: str=None):
+    if log_run_dir:
+        writer = SummaryWriter(f"{log_run_dir}embedding/")
     
     # Train embedder and recovery: minimize construction loss
     print('Start Training Phase 1: Minimize reconstruction loss')
@@ -160,17 +161,21 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
             break
 
         # Log losses to TensorBoard
-        writer.add_scalar("Loss/reconstruction loss", loss, epoch)
-        writer.add_scalar("Loss/critic_real", val_loss, epoch)
+        if log_run_dir:
+            writer.add_scalar("Loss/reconstruction loss", loss, epoch)
+            writer.add_scalar("Loss/critic_real", val_loss, epoch)
 
     print("Training phase 1 complete!")
 
-    writer.close()
+    if log_run_dir:
+        writer.close()
 
-    plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses, val_losses)
+    if log_loss_dir:
+        plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses, val_losses)
 
-def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, val_loader: DataLoader, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str, log_loss_dir: str):
-    writer = SummaryWriter(f"{log_run_dir}embedding/")
+def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, val_loader: DataLoader, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str=None, log_loss_dir: str=None):
+    if log_run_dir:
+        writer = SummaryWriter(f"{log_run_dir}embedding/")
     
     # Training phase 2: Minimize supervised loss
     print('Start Training Phase 2: Minimize unsupervised loss')
@@ -209,15 +214,19 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, val_
             break
 
         # Log losses to TensorBoard
-        writer.add_scalar("Loss/supervisor loss", loss, epoch)
-        writer.add_scalar("Loss/val loss", val_loss, epoch)
+        if log_run_dir:
+            writer.add_scalar("Loss/supervisor loss", loss, epoch)
+            writer.add_scalar("Loss/val loss", val_loss, epoch)
 
-    writer.close()
+    if log_run_dir:
+        writer.close()
 
-    plot_supervised_loss(f"{log_loss_dir}supervised_loss.png", train_losses, val_losses)
+    if log_loss_dir:
+        plot_supervised_loss(f"{log_loss_dir}supervised_loss.png", train_losses, val_losses)
     
-def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_run_dir:str, log_loss_dir: str):
-    writer = SummaryWriter(f"{log_run_dir}joint/")
+def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_run_dir:str=None, log_loss_dir: str=None):
+    if log_run_dir:
+        writer = SummaryWriter(f"{log_run_dir}joint/")
     
     # Training phase 3: Joint training
     print('Start Training Phase 3: Joint training')
@@ -259,9 +268,10 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
             val_losses.append(val_loss.item())
 
             # Log losses to TensorBoard
-            writer.add_scalar("Loss/generator loss", gen_loss, epoch_idx2)
-            writer.add_scalar("Loss/embedder loss", emb_loss, epoch_idx2)
-            writer.add_scalar("Loss/validation loss", val_loss, epoch_idx2) 
+            if log_run_dir:
+                writer.add_scalar("Loss/generator loss", gen_loss, epoch_idx2)
+                writer.add_scalar("Loss/embedder loss", emb_loss, epoch_idx2)
+                writer.add_scalar("Loss/validation loss", val_loss, epoch_idx2) 
 
             epoch_idx2 += 1
 
@@ -271,6 +281,9 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
         model.embedder.train()
         disc_loss = train_discriminator(model, train_loader, bce_loss, discriminator_optimizer)
         disc_losses.append(disc_loss.item())
+
+        if log_run_dir:
+            writer.add_scalar("Loss/discriminator loss", disc_loss, epoch)
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
@@ -283,14 +296,14 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
             writer.close()
             break
         
-        writer.add_scalar("Loss/discriminator loss", disc_loss, epoch)
-
         print(f"Epoch {epoch+1}/{epochs}, Generator loss: {gen_loss.item()}, Embedder loss: {emb_loss.item()}, Discriminator Loss: {disc_loss.item()}, val loss: {val_loss}")
+    
+    if log_run_dir:
+        writer.close()
 
-    writer.close()
-
-    plot_disc_losses(f"{log_loss_dir}disc_loss.png", disc_losses, val_losses)
-    plot_joint_losses(f"{log_loss_dir}joint_loss.png", gen_losses, emb_losses, val_losses)
+    if log_loss_dir:
+        plot_disc_losses(f"{log_loss_dir}disc_loss.png", disc_losses, val_losses)
+        plot_joint_losses(f"{log_loss_dir}joint_loss.png", gen_losses, emb_losses, val_losses)
 
     return best_val_loss
 

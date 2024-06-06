@@ -11,7 +11,6 @@ from src.training.early_stopping import EarlyStopping
 class TimeseriesClassifier(DownstreamModel):
 
     NAME = "classifier"
-    PATH = f"outputs/{NAME}"
 
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
@@ -27,8 +26,9 @@ class TimeseriesClassifier(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
 
-def train_classifier(model: TimeseriesClassifier, train_data: Dataset, epochs: int, log_run_dir: str, log_loss_dir: str, val_data: Dataset):
-    writer = SummaryWriter(log_run_dir)
+def train_classifier(model: TimeseriesClassifier, train_data: Dataset, val_data: Dataset, epochs: int, log_run_dir: str=None, log_loss_dir:str=None):
+    if log_run_dir:
+        writer = SummaryWriter(log_run_dir)
 
     # Setup training
     loss_fn = nn.BCEWithLogitsLoss().to(model.device)
@@ -67,14 +67,17 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, epochs: i
             best_val_loss = val_loss
 
         # Log losses to TensorBoard
-        writer.add_scalar("Loss/train", loss, epoch)
-        writer.add_scalar("Loss/validation", val_loss, epoch)
+        if log_run_dir:
+            writer.add_scalar("Loss/train", loss, epoch)
+            writer.add_scalar("Loss/validation", val_loss, epoch)
 
         print(f'Epoch {epoch+1}/{epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
 
-    writer.close()
+    if log_run_dir:
+        writer.close()
     
-    plot_losses(f"{log_loss_dir}loss.png", train_losses, val_losses)
+    if log_loss_dir:
+        plot_losses(f"{log_loss_dir}loss.png", train_losses, val_losses)
 
     return best_val_loss
 

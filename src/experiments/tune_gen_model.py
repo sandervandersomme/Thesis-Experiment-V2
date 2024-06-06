@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='Model type to be tuned')
     parser.add_argument('--trials', type=int, help='Number of trials', default=10)
     parser.add_argument('--folds', type=int, help='Number of k-fold splits', default=5)
+    parser.add_argument('--epochs', type=int, help='Number of epochs', default=50)
     args = parser.parse_args()
 
     # Setup experiment
@@ -30,7 +31,7 @@ if __name__ == "__main__":
     path = PATH_HYPERPARAMS
     suffix = f"{dataset.NAME}-{model_class.NAME}.json"
     saved_trial = load_best_params_and_score(PATH_HYPERPARAMS + suffix)
-    new_trial = optimize_hyperparameters(dataset, model_class, path, args.trials, args.folds)
+    new_trial = optimize_hyperparameters(dataset, model_class, path, args.epochs, args.trials, args.folds)
 
     # Saving params
     if saved_trial is None:

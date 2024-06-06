@@ -10,7 +10,7 @@ from src.models.models import train_model
 
 from datetime import datetime
 
-def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, moment):
+def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, epochs: int, moment):
     
     # Set hyperparameter grid
     hyperparams = get_grid(model_class, trial, dataset.sequences.shape)
@@ -32,7 +32,7 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, mome
         create_directory(loss_log_dir)
 
         # Train classifier
-        fold_val_loss = train_model(model, train_data, fold_log_dir, loss_log_dir, val_data)
+        fold_val_loss = train_model(model, train_data, epochs, val_data, fold_log_dir, loss_log_dir)
 
         val_losses.append(fold_val_loss)
 
@@ -41,12 +41,12 @@ def objective(model_class, trial, dataset: Dataset, path:str, n_folds: int, mome
     return avg_val_loss
 
 
-def optimize_hyperparameters(dataset, model, output_path: str, n_trials=10, n_folds=5):
+def optimize_hyperparameters(dataset, model, output_path: str, epochs: int, n_trials=10, n_folds=5):
     moment = datetime.now().strftime('%Y-%m-%d_%H-%M')
     storage = optuna.storages.RDBStorage(url=f'sqlite:///outputs/hyperparams/trials/{dataset.NAME}-{model.NAME}.db')
 
     study = optuna.create_study(study_name=f"{dataset.NAME}-{model.NAME}", direction="minimize", storage=storage, load_if_exists=True, pruner=MedianPruner)
-    study.optimize(lambda trial: objective(model, trial, dataset, output_path, n_folds, moment), n_trials=n_trials)
+    study.optimize(lambda trial: objective(model, trial, dataset, output_path, n_folds, epochs, moment), n_trials=n_trials)
 
     return study.best_trial
 
