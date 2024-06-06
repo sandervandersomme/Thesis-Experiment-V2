@@ -26,7 +26,7 @@ class GenModel():
         self.hidden_dim = hyperparams["hidden_dim"]
         self.num_layers = hyperparams["num_layers"]
         self.batch_size = hyperparams["batch_size"]
-        self.epochs = hyperparams["epochs"]
+        # self.epochs = hyperparams["epochs"]
         self.learning_rate = hyperparams['learning_rate']
 
         # early stoppiung parameters

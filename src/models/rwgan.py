@@ -92,7 +92,8 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_run_dir:
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
+            if log_run_dir:
+                writer.close()
             break
 
         # Check if best loss has increased
@@ -115,7 +116,7 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_run_dir:
 
     return best_val_loss
 
-def train_loss(train_loader: DataLoader, model: RWGAN, gen_optim: torch.optim.RMSprop, critic_optim: torch.optim.RMSprop, clip: ClipConstraint):
+def train_loss(train_loader: DataLoader, model: RWGAN, gen_optim: torch.optim.RMSprop, critic_optim: torch.optim.RMSprop):
     critic_loss = 0.0
     loss_generator = 0.0
     
@@ -209,10 +210,6 @@ if __name__ == "__main__":
     from src.data.data_loader import select_data
     dataset = select_data('cf')
 
-    from src.models.models import RGAN
     from src.training.hyperparameters import select_hyperparams
-
-    hyperparams = select_hyperparams('cf', 'rgan', dataset.sequences.shape)
-    model = RGAN(**hyperparams)
-    epochs = 100
-    train_RWGAN(model, dataset, epochs)
+    model = RWGAN(**select_hyperparams('cf', 'rwgan', dataset.sequences.shape))
+    train_RWGAN(model, dataset, 100)

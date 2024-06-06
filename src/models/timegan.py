@@ -157,7 +157,8 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
+            if log_run_dir:
+                writer.close()
             break
 
         # Log losses to TensorBoard
@@ -210,7 +211,8 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, val_
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
+            if log_run_dir:
+                writer.close()
             break
 
         # Log losses to TensorBoard
@@ -293,7 +295,8 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
+            if log_run_dir:
+                writer.close()
             break
         
         print(f"Epoch {epoch+1}/{epochs}, Generator loss: {gen_loss.item()}, Embedder loss: {emb_loss.item()}, Discriminator Loss: {disc_loss.item()}, val loss: {val_loss}")
@@ -582,3 +585,14 @@ def plot_joint_losses(path: str, losses_gen, losses_emb, val_losses):
     plt.savefig(f"{path}")  # Save the figure to a file
     plt.close()
 
+if __name__ == "__main__":
+    from src.data.data_loader import select_data
+    dataset = select_data('cf')
+
+    from torch.utils.data import random_split
+    train_size = int(len(dataset) * 0.8)
+    train_data, validation_data = random_split(dataset, [train_size, len(dataset) - train_size])
+
+    from src.training.hyperparameters import select_hyperparams
+    model = TimeGAN(**select_hyperparams('cf', 'timegan', dataset.sequences.shape))
+    train_TimeGAN(model, dataset, 100, validation_data)

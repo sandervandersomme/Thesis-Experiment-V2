@@ -67,7 +67,9 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir:s
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
+            
+            if log_run_dir:
+                writer.close()
             break
 
         # Logging losses
@@ -170,3 +172,10 @@ def plot_losses(path, train_loss_gen, train_loss_disc):
     plt.savefig(path)  # Save the figure to a file
     plt.close()
     
+if __name__ == "__main__":
+    from src.data.data_loader import select_data
+    dataset = select_data('cf')
+
+    from src.training.hyperparameters import select_hyperparams
+    model = RGAN(**select_hyperparams('cf', 'rgan', dataset.sequences.shape))
+    train_RGAN(model, dataset, 100)
