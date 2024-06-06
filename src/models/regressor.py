@@ -27,7 +27,7 @@ class TimeseriesRegressor(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
     
-def train_regressor(model: DownstreamModel, train_data: Dataset, log_run_dir: str, log_loss_dir: str, val_data: Dataset):
+def train_regressor(model: DownstreamModel, train_data: Dataset, epochs: int, log_run_dir: str, log_loss_dir: str, val_data: Dataset):
     writer = SummaryWriter(log_run_dir)
 
     loss_fn = nn.MSELoss()
@@ -44,7 +44,7 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, log_run_dir: st
     val_losses = []
 
     # Start training loop
-    for epoch in range(model.epochs):
+    for epoch in range(epochs):
         # Train model
         model.train()
         loss = train_loss(train_loader, model, optimizer, loss_fn)
@@ -70,7 +70,7 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, log_run_dir: st
         writer.add_scalar("Loss/train", loss, epoch)
         writer.add_scalar("Loss/validation", val_loss, epoch)
 
-        print(f'Epoch {epoch+1}/{model.epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
+        print(f'Epoch {epoch+1}/{epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
 
     writer.close()
     

@@ -34,7 +34,7 @@ class RWGAN(GenModel):
     def __init__(self, **hyperparams):
         super().__init__(**hyperparams)
         
-        self.clip_value = hyperparams["clip_value"]
+        self.clip = ClipConstraint(hyperparams["clip_value"])
         self.n_critic = hyperparams["n_critic"]
 
         # Create architecture
@@ -52,14 +52,13 @@ class ClipConstraint():
         for p in model.parameters():
             p.data.clamp_(-self.clip_value, self.clip_value)
 
-def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_run_dir: str, log_loss_dir: str):
+def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_run_dir: str, log_loss_dir: str):
     writer = SummaryWriter(log_run_dir)
 
     # Setup training
     optimizer_generator = torch.optim.RMSprop(model.generator.parameters(), lr=model.learning_rate)
     optimizer_critic = torch.optim.RMSprop(model.critic.parameters(), lr=model.learning_rate)
     train_loader = DataLoader(train_data, batch_size=model.batch_size, shuffle=True)
-    clip = ClipConstraint(model.clip_value)
 
     # setup early stopping and hyperparameter tuning
     early_stopping = EarlyStopping(model.patience, model.min_delta)
@@ -71,12 +70,12 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_run_dir: str, log_lo
     val_losses = []
 
     # Start training loop
-    for epoch in range(model.epochs):
+    for epoch in range(epochs):
         model.generator.train()
         model.critic.train()
 
         # Calculate losses
-        gen_loss, critic_loss = train_loss(train_loader, model, optimizer_generator, optimizer_critic, clip) 
+        gen_loss, critic_loss = train_loss(train_loader, model, optimizer_generator, optimizer_critic) 
         gen_losses.append(gen_loss)
         # critic_losses_real.append(critic_loss_real.item())
         # critic_losses_fake.append(critic_loss_fake.item())
@@ -105,7 +104,7 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, log_run_dir: str, log_lo
         # writer.add_scalar("Loss/critic_fake", critic_loss_fake, epoch)
         writer.add_scalar("Loss/val", val_loss, epoch)
 
-        print(f"Epoch {epoch+1}/{model.epochs}, Loss C-real: {critic_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
+        print(f"Epoch {epoch+1}/{epochs}, Loss C-real: {critic_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
 
     writer.close()
 
@@ -120,7 +119,7 @@ def train_loss(train_loader: DataLoader, model: RWGAN, gen_optim: torch.optim.RM
     for _, sequences in enumerate(train_loader):       
         sequences = sequences.to(model.device)      
 
-        critic_loss = train_critic(model, sequences, critic_optim, clip) # Returns (real loss, fake loss)
+        critic_loss = train_critic(model, sequences, critic_optim, model.clip) # Returns (real loss, fake loss)
         loss_generator += train_generator(model, gen_optim)
 
     avg_gen_loss = loss_generator / len(train_loader)
@@ -202,3 +201,15 @@ def plot_losses(path, losses_generator, losses_critic_real):
 
     plt.savefig(path)  # Save the figure to a file
     plt.close()
+
+if __name__ == "__main__":
+    from src.data.data_loader import select_data
+    dataset = select_data('cf')
+
+    from src.models.models import RGAN
+    from src.training.hyperparameters import select_hyperparams
+
+    hyperparams = select_hyperparams('cf', 'rgan', dataset.sequences.shape)
+    model = RGAN(**hyperparams)
+    epochs = 100
+    train_RWGAN(model, dataset, epochs)

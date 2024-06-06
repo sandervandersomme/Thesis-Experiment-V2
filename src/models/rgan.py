@@ -23,7 +23,7 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, log_run_dir: str=None, log_loss_dir: str=None):
+def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir: str=None, log_loss_dir: str=None):
     writer = SummaryWriter(log_run_dir)
 
     # Setup training
@@ -43,7 +43,7 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, log_run_dir: str=None, log
     val_losses = []
 
     # Start training loop
-    for epoch in range(model.epochs):
+    for epoch in range(epochs):
 
         model.generator.train()
         model.discriminator.train()
@@ -74,7 +74,7 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, log_run_dir: str=None, log
         writer.add_scalar('Loss/gen', gen_loss, epoch)
         writer.add_scalar('Loss/val', val_loss, epoch)
 
-        print(f"Epoch {epoch+1}/{model.epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
+        print(f"Epoch {epoch+1}/{epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
     
     writer.close()
 
