@@ -1,6 +1,7 @@
 import argparse
 
 from src.data.data_loader import load_syn_data
+from src.eval.evaluator import Evaluator
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -14,6 +15,9 @@ if __name__ == "__main__":
     # Load synthetic dataset
     path = f"outputs/syndata/{args.exp}/{args.dataset}-{args.model}-{args.num_samples}.pt"
     dataset = load_syn_data(path)
+
     # Create evaluator
+    evaluator = Evaluator()
+
     # evaluate
     # save results
