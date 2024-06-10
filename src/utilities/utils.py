@@ -64,3 +64,7 @@ def save_trial(trial, path):
     }
     with open(path, 'w') as f:
         json.dump(best_trial_data, f)
+
+def calculate_split_lengths(dataset, train_size: 0.8):
+    train_samples = int(len(dataset) * train_size)
+    return [train_samples, len(dataset)-train_samples]
