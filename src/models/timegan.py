@@ -86,7 +86,7 @@ class TimeGAN(GenModel):
             generated_data = self.recovery(supervised_embeddings)
             return generated_data    
 
-def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_data: Dataset, log_run_dir: str=None, log_loss_dir:str=None):
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_data: Dataset=None, log_run_dir: str=None, log_loss_dir:str=None):
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
@@ -94,8 +94,7 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_dat
     recovery_optimizer = torch.optim.Adam(model.recovery.parameters(), lr=model.learning_rate)
     supervisor_optimizer = torch.optim.Adam(model.supervisor.parameters(), lr=model.learning_rate)
 
-    # Setup dataloaders
-    val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
+    # Setup dataloader
     train_loader = DataLoader(train_data, model.batch_size, shuffle=True)
 
     # Initialising loss functions
@@ -113,13 +112,18 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_dat
     model.discriminator.train()
 
     # Train
-    train_embedding_network(model, train_loader, epochs, val_loader, embedder_optimizer, recovery_optimizer, mse_loss, log_run_dir, log_loss_dir)
-    train_supervised(model, train_loader, epochs, val_loader, supervisor_optimizer, generator_optimizer, mse_loss, log_run_dir, log_loss_dir)
+    if val_data:
+        val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
+        train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
+        train_supervised(model, train_loader, epochs, val_loader, supervisor_optimizer, generator_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
+    else:
+        train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, log_run_dir, log_loss_dir)
+        train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, log_run_dir, log_loss_dir)
     best_val_loss = train_joint(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss, log_run_dir, log_loss_dir)
 
     return best_val_loss
 
-def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, val_loader: DataLoader, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str=None, log_loss_dir: str=None):
+def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, val_loader: DataLoader, log_run_dir:str=None, log_loss_dir: str=None):
     if log_run_dir:
         writer = SummaryWriter(f"{log_run_dir}embedding/")
     
@@ -142,12 +146,13 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
         train_losses.append(loss.item())
         
         # Validate model
-        model.recovery.eval()
-        model.embedder.eval()
-        val_loss = validate_autoencoder(model, val_loader, mse_loss)  
-        val_losses.append(val_loss.item())
+        if val_loader:
+            model.recovery.eval()
+            model.embedder.eval()
+            val_loss = validate_autoencoder(model, val_loader, mse_loss)  
+            val_losses.append(val_loss.item())
 
-        print(f"Epoch {epoch+1}/{epochs}, reconstruction Loss: {loss.item()} val_loss: {val_loss}")
+        print(f"Epoch {epoch+1}/{epochs}, reconstruction Loss: {loss.item()}")
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
@@ -174,7 +179,7 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
     if log_loss_dir:
         plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses, val_losses)
 
-def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, val_loader: DataLoader, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_run_dir:str=None, log_loss_dir: str=None):
+def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss,  val_loader: DataLoader, log_run_dir:str=None, log_loss_dir: str=None):
     if log_run_dir:
         writer = SummaryWriter(f"{log_run_dir}embedding/")
     
@@ -196,12 +201,13 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, val_
         train_losses.append(loss.item())
 
         # Validate model
-        model.supervisor.eval()
-        model.embedder.eval()
-        val_loss = validate_supervisor(model, val_loader, mse_loss)  
-        val_losses.append(val_loss.item())
+        if val_loader:
+            model.supervisor.eval()
+            model.embedder.eval()
+            val_loss = validate_supervisor(model, val_loader, mse_loss)  
+            val_losses.append(val_loss.item())
 
-        print(f"Epoch {epoch+1}/{epochs}, Supervised Loss: {loss.item()} val_loss: {val_loss}")
+        print(f"Epoch {epoch+1}/{epochs}, Supervised Loss: {loss.item()}")
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
