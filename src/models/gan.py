@@ -10,7 +10,7 @@ class Generator(nn.Module):
         super().__init__()
 
         self.rnn = nn.GRU(input_dim, hidden_dim, num_layers=num_layers, batch_first=True)
-        self.output_layer = nn.Sequential(nn.Linear(hidden_dim, output_dim), nn.Tanh())
+        self.output_layer = nn.Sequential(nn.Linear(hidden_dim, output_dim), nn.Sigmoid())
 
 
     def forward(self, noise: torch.Tensor):
