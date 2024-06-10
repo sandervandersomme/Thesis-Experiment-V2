@@ -13,7 +13,7 @@ class WhiteBoxMIA(MIA):
         else:
             self.discriminator = model.discriminator
 
-def mia_whitebox_attack(train_data, test_data, model, threshold):
+def mia_whitebox_attack(train_data, test_data, model, mia_threshold):
     mia = WhiteBoxMIA(model)
-    results = mia.attack(train_data, test_data, threshold)
+    results = mia.attack(train_data, test_data, mia_threshold)
     return results

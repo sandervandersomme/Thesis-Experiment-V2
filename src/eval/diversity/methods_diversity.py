@@ -5,7 +5,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from src.data.data_transformation import flatten_into_events, flatten_into_sequences
 
-def embed_data(data, n_components=10):
+def embed_data(data: torch.Tensor, n_components=10):
     pca = PCA(n_components=n_components)
     data_embedded = pca.fit_transform(data)
     return torch.tensor(data_embedded), pca
@@ -36,16 +36,16 @@ def calc_coverage(nn_synthetic, real_data_embedded, threshold = 1):
     return coverage
 
 
-def calculate_diversity_scores(realdata, syndata, n_components: int, n_neighbors: int, reshape_method: str):
+def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, reshape_method: str):
     if reshape_method == "sequences":
-        realdata = flatten_into_sequences(realdata)
+        train_data = flatten_into_sequences(train_data)
         syndata = flatten_into_sequences(syndata)
     if reshape_method == "events":
-        realdata = flatten_into_events(realdata)
+        train_data = flatten_into_events(train_data)
         syndata = flatten_into_events(syndata)
     
     # Embed data with PCA
-    real_embedded, pca = embed_data(realdata, n_components)
+    real_embedded, pca = embed_data(train_data, n_components)
     syn_embedded = transform_data(syndata, pca)
 
     # Calculate nearest neighbors of sequences

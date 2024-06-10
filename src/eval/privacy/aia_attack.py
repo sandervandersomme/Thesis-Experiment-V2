@@ -5,11 +5,11 @@ from sklearn.metrics import f1_score
 
 # AIA stands for Attribute Inference Attack
 class AIA:
-    def __init__(self, known_indices: List[int], unknown_indices: List[int], k: int = 1, threshold: float = 0.1):
+    def __init__(self, known_indices: List[int], unknown_indices: List[int], aia_threshold: float = 0.1,k: int = 1):
         self.known_indices = known_indices
         self.unknown_indices = unknown_indices
         self.k = k
-        self.threshold = threshold
+        self.threshold = aia_threshold
 
     def find_knn(self, target_sequence: torch.Tensor, syndata: torch.Tensor) -> torch.Tensor:
         distances = torch.norm(syndata[:, :, self.known_indices] - target_sequence[:, self.known_indices].unsqueeze(0), dim=(1, 2))
@@ -20,11 +20,11 @@ class AIA:
         unique, counts = torch.unique(neighbors[:, :, unknown_index], return_counts=True)
         return unique[torch.argmax(counts)]
 
-    def calculate_risk(self, syndata: torch.Tensor, realdata: torch.Tensor) -> float:
+    def calculate_risk(self, syndata: torch.Tensor, real_data: torch.Tensor) -> float:
         inferred_attributes = []
-        true_attributes = realdata[:, :, self.unknown_indices]
+        true_attributes = real_data[:, :, self.unknown_indices]
 
-        for sequence in realdata:
+        for sequence in real_data:
             neighbors_indices = self.find_knn(sequence, syndata)
             neighbors = syndata[neighbors_indices]
 
@@ -37,35 +37,45 @@ class AIA:
         inferred_attributes = torch.tensor(inferred_attributes)
 
         # calculate weights
-        information_entropy = -torch.sum(realdata * torch.log2(realdata + 1e-9), dim=(0, 1))
+        information_entropy = -torch.sum(real_data * torch.log2(real_data + 1e-9), dim=(0, 1))
         weights = information_entropy / torch.sum(information_entropy)
-        weigths = weights[self.unknown_indices]
+        weights = weights[self.unknown_indices]
 
         weighted_f1_score = 0.0
         weighted_accuracy = 0.0
 
+        print(self.unknown_indices)
         for i in range(true_attributes.shape[2]):
             if is_binary(true_attributes[:, :, i]): # Binary attribute
-                f1_score = f1_score(true_attributes[:, :, i].flatten().cpu().numpy(), inferred_attributes[:, :, i].flatten().cpu().numpy())
-                weighted_f1_score += weights[i] * f1_score
+                print("is binary")
+                print(true_attributes[:,:,i])
+                print(inferred_attributes[:,:,i])
+
+                true_flat = true_attributes[:, :, i].flatten().cpu().numpy()
+                inferred_flat = inferred_attributes[:, :, i].flatten().cpu().numpy()
+                true_binary = np.round(true_flat).astype(int)
+                inferred_binary = np.round(inferred_flat).astype(int)
+
+                f1 = f1_score(true_binary, inferred_binary)
+                weighted_f1_score += weights[i] * f1
             else:  # Continuous attribute
-                weighted_accuracy += weights[i] * torch.mean((torch.abs(true_attributes[:, :, i] - inferred_attributes[:, :, i]) < self.threshold).float()).item()
+                print("is continuous")
+
+                accuracy = torch.mean((torch.abs(true_attributes[:, :, i] - inferred_attributes[:, :, i]) < self.threshold).float()).item()
+                weighted_accuracy += weights[i] * accuracy
 
         attribute_inference_risk = weighted_f1_score + weighted_accuracy
 
         return attribute_inference_risk
 
-def is_binary(attribute): return torch.unique(attribute).numel() == 2
+def is_binary(tensor): return torch.all((tensor == 0) | (tensor == 1))
 
-def perform_aia(syndata: torch.Tensor, traindata: torch.Tensor, unknown_indices:torch.Tensor=None, k=1, threshold=0.1, num_disclosed_attributes:int=3):
-    if unknown_indices is None:
-        unknown_indices = torch.randperm(realdata.size(2))[:num_disclosed_attributes]
-        known_indices = get_known_indices(unknown_indices, realdata.size(2))
-    else:
-        known_indices = known_indices(unknown_indices)
+def perform_aia(syndata: torch.Tensor, train_data: torch.Tensor, k=1, aia_threshold=0.1, num_disclosed_attributes:int=3):
+    unknown_indices = torch.randperm(train_data.size(2))[:num_disclosed_attributes]
+    known_indices = get_known_indices(unknown_indices, train_data.size(2))
 
-    attack = AIA(known_indices, unknown_indices, k=1, threshold=0.1)
-    risk = attack.calculate_risk(syndata, traindata)
+    attack = AIA(known_indices, unknown_indices, aia_threshold, k=1)
+    risk = attack.calculate_risk(syndata, train_data)
 
     return {
         "risk": risk
