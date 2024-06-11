@@ -59,8 +59,6 @@ class AIA:
                 f1 = f1_score(true_binary, inferred_binary)
                 weighted_f1_score += weights[i] * f1
             else:  # Continuous attribute
-                print("is continuous")
-
                 accuracy = torch.mean((torch.abs(true_attributes[:, :, i] - inferred_attributes[:, :, i]) < self.threshold).float()).item()
                 weighted_accuracy += weights[i] * accuracy
 
