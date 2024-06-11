@@ -11,7 +11,7 @@ def stats(train_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     train_data = train_data.numpy().reshape(-1, train_data.shape[2])
     syndata = syndata.numpy().reshape(-1, syndata.shape[2])
 
-    average_scores = {}
+    scores = {}
     var_diffs = {}
     
     # Loop through statistic methods
@@ -21,13 +21,17 @@ def stats(train_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
         differences = np.abs(method(train_data, axis=0) - method(syndata, axis=0))
         average_diff = np.mean(differences)
 
-        average_scores[method.__name__] = average_diff
+        scores.update({
+            f"Average {method.__name__}": average_diff
+        })
+            
         var_diffs[method.__name__] = dict(zip(columns, differences))
 
-    return {
-        "average_scores": average_scores, 
+    scores.update({
         "differences per variable": var_diffs
-    }
+    })
+
+    return scores
 
 def kolmogorov_smirnov(train_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     "Use kolmogorov smirnov to calculate distances between variable distributions"
@@ -188,8 +192,7 @@ def diff_corr_matrix(real_events: torch.Tensor, synthetic_events: torch.Tensor):
     # The frobenius norm calculates the size or magnitude of a matrix (in this case, the magnitude of the difference matrix)
     frobenius_norm = np.linalg.norm(diff_matrix, 'fro')
 
-    return {"diff_matrix": diff_matrix, 
-            "frobenius_norm": frobenius_norm}
+    return diff_matrix, frobenius_norm
 
 
 
