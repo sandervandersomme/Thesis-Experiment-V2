@@ -43,8 +43,11 @@ diversity_methods = [
 
 all_methods = similarity_methods + privacy_methods + utility_methods + diversity_methods
 
-def parse_eval_arguments():
+def parse_exp1_arguments():
     parser = argparse.ArgumentParser()
+    # Setup experiment
+    parser.add_argument('--dataset', type=str, default='cf')
+
     # Privacy arguments
     parser.add_argument('--k', type=int, help="Number of neighbors in knn", default=1)
     parser.add_argument('--aia_threshold', type=float, help="", default=0.8)
@@ -60,4 +63,4 @@ def parse_eval_arguments():
     parser.add_argument('--reshape_method', type=str, help="How to reshape the data?", choices=['sequences', 'events'], default="sequences")
 
     method_args = vars(parser.parse_args())
-    return method_args
+    return parser.parse_args(), method_args
