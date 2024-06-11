@@ -1,7 +1,7 @@
 import torch
 
 from src.models.gen_model import GenModel
-from src.models.models import select_gen_model, train_model, RWGAN
+from src.models.models import select_gen_model, train_model, RWGAN, TimeGAN
 from src.training.hyperparameters import get_default_params, add_shape_to_params
 
 # MIA stands for membership inference attack
@@ -9,6 +9,7 @@ class MIA():
     def __init__(self, model: GenModel):
         self.device = model.device
         self.discriminator = None
+        self.model = model
 
     def attack(self, train_data: torch.tensor, test_data: torch.tensor, threshold: float):
         # Configure attack data
@@ -22,7 +23,10 @@ class MIA():
 
         # Get discriminator confidence scores
         with torch.no_grad():
-            predictions = self.discriminator(mixed_data)
+            if self.model.__class__.isinstance(TimeGAN):
+                predictions = attack_timegan(self.model, mixed_data)
+            else:
+                predictions = self.discriminator(mixed_data)
         
         scores_vs_labels = list(zip(predictions, labels.tolist()))
         scores_vs_labels.sort(key=lambda x: x[0], reverse=True)
@@ -44,6 +48,11 @@ class MIA():
             "samples at risk": num_samples_at_risk/len(train_data),
             "total accuracy": accuracy
         }
+
+def attack_timegan(model: TimeGAN, data):
+    outputs = model.embedder(data)
+    outputs = model.discriminator(data)
+    return outputs
 
 if __name__ == "__main__":
     from src.data.random_data import generate_random_data
