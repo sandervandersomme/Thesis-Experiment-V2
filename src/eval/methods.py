@@ -57,7 +57,7 @@ def parse_eval_arguments():
     # Diversity arguments
     parser.add_argument('--n_components', type=int, help="Number of componenents in pca", default=10)
     parser.add_argument('--n_neighbors', type=int, help="Number of neighbors in knn", default=5)
-    parser.add_argument('--reshape_method', type=str, help="How to reshape the data?", choices=['sequences', 'events'], default=0)
+    parser.add_argument('--reshape_method', type=str, help="How to reshape the data?", choices=['sequences', 'events'], default="sequences")
 
     method_args = vars(parser.parse_args())
     return method_args
