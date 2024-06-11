@@ -5,11 +5,11 @@ import argparse
 
 from src.eval.methods import similarity_methods, diversity_methods, privacy_methods, utility_methods, all_methods
 from src.models.models import GenModel
+from src.utilities.utils import convert_numpy_types
 
 import pandas as pd
 from typing import List, Callable
-
-import os
+import json
 
 class Evaluator:
     def __init__(self, train_data: torch.Tensor, test_data: torch.Tensor, name_dataset: str, methods: List[Callable], **kwargs):
@@ -35,6 +35,10 @@ class Evaluator:
         for method in self.methods:
             eval_results = self.evaluate_method(method)
             scores.update(eval_results)
+
+        output_file_path = f"outputs/experiments/1/scores-{self.kwargs["model"].NAME}{self.name_dataset}.json"
+        with open(output_file_path, 'w') as f:
+            json.dump(scores, f, default=convert_numpy_types)
     
     def evaluate_method(self, method: Callable):
         # Dynamically set the arguments and run the evaluation methods
