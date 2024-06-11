@@ -115,7 +115,7 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_dat
     if val_data:
         val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
         train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
-        train_supervised(model, train_loader, epochs, val_loader, supervisor_optimizer, generator_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
+        train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
     else:
         train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, log_run_dir, log_loss_dir)
         train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, log_run_dir, log_loss_dir)
@@ -151,15 +151,18 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
             model.embedder.eval()
             val_loss = validate_autoencoder(model, val_loader, mse_loss)  
             val_losses.append(val_loss.item())
-
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+            early_stopping(val_loss)
+        else:
+            # Check if best loss has increased
+            if loss < best_val_loss:
+                best_val_loss = loss
+            early_stopping(loss)
+            
         print(f"Epoch {epoch+1}/{epochs}, reconstruction Loss: {loss.item()}")
 
-        # Check if best loss has increased
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-
         # Check for early stopping
-        early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
             if log_run_dir:
@@ -206,15 +209,19 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_
             model.embedder.eval()
             val_loss = validate_supervisor(model, val_loader, mse_loss)  
             val_losses.append(val_loss.item())
-
+            # Check if best loss has increased
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+            early_stopping(val_loss)
+        else: 
+            # Check if best loss has increased
+            if loss < best_val_loss:
+                best_val_loss = loss
+            early_stopping(loss)
+            
         print(f"Epoch {epoch+1}/{epochs}, Supervised Loss: {loss.item()}")
 
-        # Check if best loss has increased
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-
         # Check for early stopping
-        early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
             if log_run_dir:
