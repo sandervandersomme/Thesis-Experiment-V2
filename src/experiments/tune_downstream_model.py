@@ -20,6 +20,7 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, help='Model type to be tuned')
     parser.add_argument('--task', type=str, choices=['classification', 'regression'], help='Type of downstream task to be performed')
     parser.add_argument('--trials', type=int, help='Number of trials', default=10)
+    parser.add_argument('--folds', type=int, help='Number of folds', default=10)
     parser.add_argument('--epochs', type=int, help='Number of epochs', default=50)
     args = parser.parse_args()
 
