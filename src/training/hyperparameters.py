@@ -91,7 +91,9 @@ def add_shape_to_params(hyperparams: dict, shape: tuple):
     })
     return hyperparams
 
-def select_hyperparams(dataset: str, model: str, shape: Tuple):
+def select_hyperparams(dataset: str, model: str, shape: Tuple, default=False):
+    if default:
+        return get_default_params(model, shape)
     file_path = f"outputs/hyperparams/{dataset}-{model}.json"
     if file_exists(file_path):
         hyperparams = load_params(file_path)
