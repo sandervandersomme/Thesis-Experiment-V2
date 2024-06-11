@@ -45,6 +45,17 @@ def handle_numpy(obj):
     if isinstance(obj, np.generic):
         return obj.item()
 
+def convert_numpy_types(obj):
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.float32):
+        return float(obj)
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, torch.Tensor):
+        return obj.tolist()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
 def create_directory(path):
     if not os.path.exists(path):
         os.makedirs(path)
