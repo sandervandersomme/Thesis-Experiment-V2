@@ -23,7 +23,7 @@ class MIA():
 
         # Get discriminator confidence scores
         with torch.no_grad():
-            if self.model.__class__.isinstance(TimeGAN):
+            if isinstance(self.model, TimeGAN):
                 predictions = attack_timegan(self.model, mixed_data)
             else:
                 predictions = self.discriminator(mixed_data)
