@@ -115,7 +115,7 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_dat
     if val_data:
         val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
         train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
-        train_supervised(model, train_loader, epochs, val_loader, supervisor_optimizer, generator_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
+        train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
     else:
         train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, log_run_dir, log_loss_dir)
         train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, log_run_dir, log_loss_dir)
@@ -146,7 +146,7 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
         train_losses.append(loss.item())
         
         # Validate model
-        if val_loader:
+        if val_loader: 
             model.recovery.eval()
             model.embedder.eval()
             val_loss = validate_autoencoder(model, val_loader, mse_loss)  
