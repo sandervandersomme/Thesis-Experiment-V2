@@ -50,8 +50,10 @@ class MIA():
         }
 
 def attack_timegan(model: TimeGAN, data):
+    print(data.size())
     outputs = model.embedder(data)
-    outputs = model.discriminator(data)
+    print(outputs.size())
+    outputs = model.discriminator(outputs)
     return outputs
 
 if __name__ == "__main__":
