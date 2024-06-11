@@ -146,7 +146,7 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
         train_losses.append(loss.item())
         
         # Validate model
-        if val_loader:
+        if val_loader: 
             model.recovery.eval()
             model.embedder.eval()
             val_loss = validate_autoencoder(model, val_loader, mse_loss)  
