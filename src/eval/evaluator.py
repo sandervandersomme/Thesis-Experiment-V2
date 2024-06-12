@@ -2,6 +2,7 @@ import pandas as pd
 import torch
 import inspect
 import argparse
+import os
 
 from src.eval.methods import similarity_methods, diversity_methods, privacy_methods, utility_methods, all_methods
 from src.models.models import GenModel
@@ -12,9 +13,10 @@ from typing import List, Callable
 import json
 
 class Evaluator:
-    def __init__(self, train_data: torch.Tensor, test_data: torch.Tensor, name_dataset: str, methods: List[Callable], **kwargs):
+    def __init__(self, train_data: torch.Tensor, test_data: torch.Tensor, name_dataset: str, methods: List[Callable], output_path: str, **kwargs):
         self.results = pd.DataFrame()
         self.name_dataset = name_dataset
+        self.output_path = output_path
         self.methods = methods
         self.kwargs = kwargs
         self.kwargs.update({
@@ -25,9 +27,12 @@ class Evaluator:
         self.check_params_is_complete()
 
     def evaluate_dataset(self, syndata: torch.Tensor, model: GenModel):
+        graph_path = f"{self.output_path}graphs/{self.name_dataset}-{model.NAME}/"
+        os.makedirs(f"{graph_path}sim_ts_corrs/", exist_ok=True)
         self.kwargs.update({
             "syndata": syndata,
-            "model" : model
+            "model" : model,
+            "graph_path": graph_path
         })
 
         scores = {"Name dataset": self.name_dataset}
@@ -52,7 +57,7 @@ class Evaluator:
 
     def check_params_is_complete(self): 
         # Get all params of all methods without syndata and model
-        all_required_params = set([param for method in self.methods for param in inspect.signature(method).parameters]).difference(["syndata", "model"])
+        all_required_params = set([param for method in self.methods for param in inspect.signature(method).parameters]).difference(["syndata", "model", "graph_path"])
         assert all_required_params.issubset(self.kwargs.keys()), f"Missing arguments: {all_required_params.difference(self.kwargs.keys())}"
 
 
