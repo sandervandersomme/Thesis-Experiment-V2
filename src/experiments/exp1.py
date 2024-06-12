@@ -4,7 +4,7 @@ from src.models.models import train_model, GenModel, select_gen_model
 from torch.utils.data import random_split
 from src.utilities.utils import calculate_split_lengths
 from src.eval.evaluator import Evaluator
-from src.eval.methods import all_methods, parse_exp1_arguments, similarity_methods
+from src.eval.methods import all_methods, parse_exp1_arguments, similarity_methods, similarity_time_methods
 import pandas as pd
 
 import torch
@@ -12,8 +12,12 @@ import torch
 if __name__ == "__main__":
     args, parameters = parse_exp1_arguments()
 
+
+
     dataset_name = args.dataset
-    models = ['rgan', 'rwgan', 'timegan']
+    # models = ['rgan', 'rwgan', 'timegan']
+    models = ['rgan']
+
 
     split = 0.8
     epochs = 50
@@ -27,7 +31,13 @@ if __name__ == "__main__":
     test_data = test_data.dataset.sequences
 
     # initialize evaluator
-    eval = Evaluator(train_data=train_data, test_data=test_data, columns=dataset.columns, name_dataset=dataset_name, methods=all_methods, **parameters)
+    eval = Evaluator(train_data=train_data, 
+                     test_data=test_data, 
+                     columns=dataset.columns, 
+                     name_dataset=dataset_name, 
+                     output_path=f"outputs/experiments/1/", 
+                     methods=similarity_time_methods, 
+                     **parameters)
 
     # loop through models, train them and generate synthetic data
     for model_name in models:
