@@ -1,6 +1,6 @@
 # import similarity
-from src.eval.similarity.methods_similarity import stats, kolmogorov_smirnov,differences_variable_correlations,wasserstein_distance,wasserstein_distance_timesteps, differences_timestep_correlations, differences_timestep_distances
-
+from src.eval.similarity.methods_similarity import stats, kolmogorov_smirnov, differences_variable_correlations, wasserstein_distance
+from src.eval.similarity.methods_time import wasserstein_distance_timesteps, differences_timestep_correlations, differences_timestep_distances
 # import utility
 # from src.eval.utility
 
@@ -19,7 +19,10 @@ similarity_methods = [
     stats,
     kolmogorov_smirnov,
     differences_variable_correlations,
-    wasserstein_distance,
+    wasserstein_distance
+]
+
+similarity_time_methods = [
     wasserstein_distance_timesteps,
     differences_timestep_distances,
     differences_timestep_correlations
@@ -41,7 +44,7 @@ diversity_methods = [
     calculate_diversity_scores
 ]
 
-all_methods = similarity_methods + privacy_methods + utility_methods + diversity_methods
+all_methods = similarity_methods + similarity_time_methods + privacy_methods + utility_methods + diversity_methods
 
 def parse_exp1_arguments():
     parser = argparse.ArgumentParser()
