@@ -1,31 +1,28 @@
+from src.data.cf import DownstreamDataset
 import torch
-from torch.utils.data import Dataset
 from typing import List
 
-class CF_Classification(Dataset):
+def create_cf_classification_data(sequences: torch.Tensor, columns: List[str], name: str):
+    target_var = columns.index("PPFEV1")
+    labels = (sequences[:, -1, target_var] > sequences[:, 0, target_var]).long().unsqueeze(dim=1)
 
-    NAME = "cf_classification"
-
-    def __init__(self, sequences: torch.Tensor, columns = List[str]):
-        super().__init__()
-        self.sequences = sequences
-        self.columns = columns
-
-        target_var = self.columns.index("PPFEV1")
-        self.labels = set_labels(self.sequences, target_var).unsqueeze(dim=1)
-        
-        assert len(self.sequences) == len(self.labels)
-        
-    def __len__(self):
-        return len(self.sequences)
+    sequences = torch.cat((sequences[:, :, :target_var], sequences[:, :, target_var+1:]), dim=2)
+    columns = [col for col in columns if col != "PPFEV1"]
     
-    def __getitem__(self, index):
-        return self.sequences[index], self.labels[index]
-    
-    
-def set_labels(sequences: torch.Tensor, target_var):
-    first_events = sequences[:, 0, target_var]
-    last_events = sequences[:, -1, target_var]
-    labels = last_events > first_events
+    return DownstreamDataset(sequences, labels, columns, name)
 
-    return labels.float()
+if __name__ == "__main__":
+    from src.data.cf import CF
+    from src.data.data_processing import split_train_test
+    from src.data.data_loader import save_to_csv
+
+    # Load real data and split
+    cf = CF()
+    train_sequences, test_sequences = split_train_test(cf, 0.7)
+    
+    # Create downstream datasets
+    cf_class_train = create_cf_classification_data(train_sequences, cf.columns, "Classification_Real_Train")
+    cf_class_test = create_cf_classification_data(test_sequences, cf.columns, "Classification_Real_Test")
+
+    save_to_csv(cf_class_train.sequences, cf_class_train.targets, cf_class_train.columns, "outputs/test")
+    

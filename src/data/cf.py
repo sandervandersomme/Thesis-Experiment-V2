@@ -1,7 +1,9 @@
+from typing import List
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset
 import torch
 import pandas as pd
+import numpy as np
 
 class CF(Dataset):
     PATH_SEQUENCES = "datasets/processed/cf_full.csv"
@@ -42,5 +44,18 @@ class CF(Dataset):
     def __getitem__(self, index):
         return self.sequences[index]
 
+class DownstreamDataset(Dataset):
+    def __init__(self, sequences: torch.Tensor, targets: torch.Tensor, columns: List[str], name: str):
+        self.sequences, self.targets, self.columns, self.name = sequences, targets, columns, name
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, index):
+        return self.sequences[index], self.targets[index]
+
 if __name__ == "__main__":
     cf = CF()
+
+    from src.data.data_processing import split_train_test
+    train_sequences, test_sequences = split_train_test(cf, 0.7)
