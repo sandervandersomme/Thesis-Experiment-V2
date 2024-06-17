@@ -1,3 +1,4 @@
+import os
 from typing import List
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -45,11 +46,40 @@ def visualise_varcor_similarities(matrix, path: str):
     sns.heatmap(matrix, annot=True, fmt=".2f", cmap='coolwarm', annot_kws={"size": 9}, linewidths=0.5, linecolor='black')
     plt.title('Similarities in synthetic and real variable correlations')
     plt.savefig(path)
-    plt.clf()
+    plt.close()
 
 def visualise_tscor_similarities(matrix, path: str, var_name: str):
     plt.figure(figsize=(10, 5))
     sns.heatmap(matrix, annot=True, fmt=".2f", cmap='coolwarm', annot_kws={"size": 9}, linewidths=0.5, linecolor='black')
     plt.title(f'Similarities in synthetic and real time-step correlations of variable {var_name}')
     plt.savefig(path)
-    plt.clf()
+    plt.close()
+    
+def visualise_inter_timestep_distances(distances, path: str):
+    plt.figure(figsize=(10,5))
+    plt.plot(range(len(distances)), distances)
+    plt.xlabel("Timesteps")
+    plt.ylabel("Wasserstein distance")
+    plt.title("Wasserstein distance between real and synthetic time-step distributions")
+    plt.savefig(path)
+    plt.close()
+
+def visualise_longshortterm_correlations(matrix, path: str):
+    plt.figure(figsize=(10, 5))
+    sns.heatmap(matrix, annot=True, fmt=".2f", cmap='coolwarm', annot_kws={"size": 9}, linewidths=0.5, linecolor='black')
+    plt.title(f'Differences in long and short term correlations')
+    plt.savefig(path)
+    plt.close()
+
+def visualise_distributions(real_data, syndata, columns, path):
+    os.makedirs(path, exist_ok=True)
+    for feat_idx in range(len(columns)):
+        plt.figure(figsize=(10,5))
+        sns.histplot(real_data[:, feat_idx], kde=True, color='blue', label="real data")
+        sns.histplot(syndata[:, feat_idx], kde=True, color='red', label="synthetic data")
+        plt.title("distributions")
+        plt.legend()
+        plt.savefig(f"{path}{columns[feat_idx]}")
+        plt.close()
+    
+    

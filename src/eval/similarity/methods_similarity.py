@@ -4,7 +4,7 @@ import numpy as np
 from typing import List
 from scipy.stats import ks_2samp, skew, kurtosis
 
-from src.eval.visualise import visualise_varcor_similarities
+from src.eval.visualise import visualise_varcor_similarities, visualise_distributions
 
 
 def stats(train_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
@@ -72,23 +72,25 @@ def differences_variable_correlations(train_data: torch.Tensor, syndata: torch.T
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
     diff_matrix, frob_norm = similarity_correlation_matrix(real_eventlog, synthetic_eventlog)
 
-    visualise_varcor_similarities(diff_matrix, f"{graph_path}matrix_varcors_differences.png")
+    visualise_varcor_similarities(diff_matrix, f"{graph_path}sim_varcors.png")
 
     return {
         "Magnitude of difference in variable correlations": frob_norm
     }
 
-def wasserstein_distance(train_data: torch.Tensor, syndata: torch.Tensor):
+def wasserstein_distance_joint(train_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
     """
     Calculates the wasserstein distance between real and synthetic eventlogs
     """
-
     num_features = train_data.shape[2]
     real_eventlog = train_data.numpy().reshape(-1, num_features)
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
 
     cost_matrix = ot.dist(real_eventlog, synthetic_eventlog)
     distance = ot.emd2([], [], cost_matrix)
+
+    visualise_distributions(real_eventlog, synthetic_eventlog, columns, f"{graph_path}distributions/")
+
     return {"Wasserstein distance between real and synthetic eventlogs": distance}
 
 def similarity_correlation_matrix(real_events: torch.Tensor, synthetic_events: torch.Tensor):

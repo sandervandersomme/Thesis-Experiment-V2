@@ -3,19 +3,22 @@ import ot
 import numpy as np
 
 from src.eval.similarity.methods_similarity import similarity_correlation_matrix
-from src.eval.visualise import visualise_tscor_similarities
+from src.eval.visualise import visualise_longshortterm_correlations, visualise_inter_timestep_distances, visualise_tscor_similarities
 
-def wasserstein_distance_timesteps(train_data: torch.Tensor, syndata: torch.Tensor):
+def difference_timestep_distributions(train_data: torch.Tensor, syndata: torch.Tensor, graph_path):
     """
     For each time-step, calculates the wasserstein distance between the real and synthetic time step
     """
+    train_data = train_data.numpy()
+    syndata = syndata.numpy()
+
     # Compute wasserstein distances between real and synthetic time-steps
-    sequence_length = train_data.size(1)
+    sequence_length = train_data.shape[1]
     distances = {}
 
     for timestep in range(sequence_length):
-        timestep_real = train_data[:, timestep, :].numpy()
-        timestep_syn = syndata[:, timestep, :].numpy()
+        timestep_real = train_data[:, timestep, :]
+        timestep_syn = syndata[:, timestep, :]
 
         cost_matrix = ot.dist(timestep_real, timestep_syn)
         distance = ot.emd2([], [], cost_matrix) 
@@ -24,36 +27,38 @@ def wasserstein_distance_timesteps(train_data: torch.Tensor, syndata: torch.Tens
 
     average_distance = np.mean(list(distances.values()))
 
+    visualise_inter_timestep_distances(list(distances.values()), f"{graph_path}inter_ts_distances")
+
     return {
         "average_distance": average_distance,
         "distances": distances
     }
 
-def differences_timestep_distances(train_data: torch.Tensor, syndata: torch.Tensor):
+def difference_inter_timestep_distances(train_data: torch.Tensor, syndata: torch.Tensor, graph_path):
     """
     Calculates the size of the difference between real and synthetic wasserstein distance matrices
     """
 
     # Calculate distance matrix of real data, then of synthetic data, take difference
-    timestep_distance_matrix = np.abs(distances_timesteps(train_data) - distances_timesteps(syndata))
-
+    diffmatrix_longshort_corrs = np.abs(inter_timestep_distances(train_data) - inter_timestep_distances(syndata))
     # Calculate magnitude of distance matrix
-    frobenius_norm = np.linalg.norm(timestep_distance_matrix, 'fro')
+    frobenius_norm = np.linalg.norm(diffmatrix_longshort_corrs, 'fro')
 
-    # TODO: Visualise matrix
+    visualise_longshortterm_correlations(diffmatrix_longshort_corrs, f"{graph_path}long_short_term_corrs_diffs")
 
     return {
         "Magnitude of differences in wasserstein distances between time-steps": frobenius_norm
     }
 
-def distances_timesteps(data: torch.Tensor):
+def inter_timestep_distances(data: torch.Tensor):
     """
     Calculates the wasserstein distance matrix for each time-step pair within a dataset
     """
+    data = data.numpy()
 
     # This function calculates the wasserstein distance matrix between time steps
 
-    num_timesteps = data.size(1)
+    num_timesteps = data.shape[1]
     distance_matrix = np.zeros((num_timesteps, num_timesteps))
 
     # Loop through timesteps
@@ -61,15 +66,17 @@ def distances_timesteps(data: torch.Tensor):
         for t2 in range(t1, num_timesteps):
 
             # Don't calculate distance for similar timesteps
-            if t1 == t2: continue
+            if t1 == t2: 
+                distance_matrix[t1][t2] = 0.0
+                continue
 
             # Get timesteps: (sequences, features)
-            t1_data = data[:, t1, :].numpy()
-            t2_data = data[:, t2, :].numpy()
+            t1_data = data[:, t1, :]
+            t2_data = data[:, t2, :]
 
             # Calculate distance between timesteps
             cost_matrix = ot.dist(t1_data, t2_data)
-            distance = ot.emd2([], [], cost_matrix) 
+            distance = ot.emd2([], [], cost_matrix)
 
             # Save distance in matrix
             distance_matrix[t1][t2] = distance
@@ -77,7 +84,7 @@ def distances_timesteps(data: torch.Tensor):
 
     return distance_matrix
 
-def differences_timestep_correlations(train_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
+def similarities_long_short_term_correlations(train_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
     """
     For each feature, calculates the difference between real and synthetic time-step correlations
     """
