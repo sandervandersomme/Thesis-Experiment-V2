@@ -12,20 +12,6 @@ def select_data(dataset: str) -> Dataset:
     "select and load dataset"
     if dataset == "cf":
         return CF()
-
-# def create_downstream_dataset(dataset, task: str):
-#     if task == "classification":
-#         return create_classification_dataset(dataset)
-#     if task == "regression":
-#         return create_regression_dataset(dataset)
-    
-# def create_classification_dataset(dataset):
-#     if dataset.NAME == "cf":
-#         return CF_Classification(dataset.sequences, dataset.columns.copy())
-
-# def create_regression_dataset(dataset):
-#     if dataset.NAME == "cf":
-#         return CF_Regression(dataset.sequences, dataset.columns.copy())
     
 def save_to_csv(sequences: torch.Tensor, labels: torch.Tensor, columns: List[str], filename: str):
     sequences_np = sequences.numpy()

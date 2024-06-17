@@ -19,14 +19,14 @@ def flatten_into_events(data: torch.Tensor):
 def generate_random_data(n_sequence, n_events, n_features):
     return torch.rand((n_sequence, n_events, n_features))
 
-def split_train_test(dataset: Dataset, train_split: float):
+def split_train_test(dataset: Dataset, train_split: float, generator = None):
     """Returns train and test sequences"""
 
     train_size = int(len(dataset) * train_split)
     test_size = len(dataset) - train_size
     lengths = [train_size, test_size]
-    train_subset, test_subset = random_split(dataset, lengths)
+    train_subset, test_subset = random_split(dataset, lengths, generator=generator)
 
-    train_sequences = dataset.sequences[train_subset.indices]
-    test_sequences = dataset.sequences[test_subset.indices]
-    return train_sequences, test_sequences
+    # train_sequences = dataset.sequences[train_subset.indices]
+    # test_sequences = dataset.sequences[test_subset.indices]
+    return train_subset, test_subset
