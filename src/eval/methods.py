@@ -1,6 +1,6 @@
 # import similarity
-from src.eval.similarity.methods_similarity import stats, kolmogorov_smirnov, differences_variable_correlations, wasserstein_distance
-from src.eval.similarity.methods_time import wasserstein_distance_timesteps, differences_timestep_correlations, differences_timestep_distances
+from src.eval.similarity.methods_similarity import stats, kolmogorov_smirnov, differences_variable_correlations, wasserstein_distance_joint
+from src.eval.similarity.methods_time import difference_timestep_distributions, similarities_long_short_term_correlations, difference_inter_timestep_distances
 # import utility
 # from src.eval.utility
 
@@ -19,13 +19,13 @@ similarity_methods = [
     stats,
     kolmogorov_smirnov,
     differences_variable_correlations,
-    wasserstein_distance
+    wasserstein_distance_joint
 ]
 
-similarity_time_methods = [
-    wasserstein_distance_timesteps,
-    differences_timestep_distances,
-    differences_timestep_correlations
+time_methods = [
+    difference_timestep_distributions,
+    difference_inter_timestep_distances,
+    similarities_long_short_term_correlations
 ]
 
 utility_methods = [
@@ -44,12 +44,22 @@ diversity_methods = [
     calculate_diversity_scores
 ]
 
-all_methods = similarity_methods + similarity_time_methods + privacy_methods + utility_methods + diversity_methods
+all_methods = similarity_methods + time_methods + privacy_methods + utility_methods + diversity_methods
+
+methods_dict = {
+    "similarity": similarity_methods,
+    "privacy": privacy_methods,
+    "time": time_methods,
+    "diversity": diversity_methods,
+    "utility": utility_methods,    
+}
 
 def parse_exp1_arguments():
     parser = argparse.ArgumentParser()
     # Setup experiment
     parser.add_argument('--dataset', type=str, default='cf')
+    parser.add_argument('--criteria', type=str, choices=['time', 'similarity', 'diversity', 'privacy', 'utility'], nargs='*')
+    parser.add_argument('--model', type=str, choices=['rgan', 'rwgan', 'timegan'])
 
     # Privacy arguments
     parser.add_argument('--k', type=int, help="Number of neighbors in knn", default=1)
