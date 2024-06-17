@@ -9,41 +9,38 @@ class CF(Dataset):
 
     def __init__(self):
         super().__init__()
+        self.sequences, self.boolean_indices, self.columns = self.load_and_process_data()
 
-        # Load data
-        self.sequences = pd.read_csv(self.PATH_SEQUENCES)
-        self.columns = [col for col in self.sequences.columns if col not in ["PATIENTNR", "DATE", "START_KAFTRIO"]]
-
-        #  data
-        self.sequences = scale_and_reshape(self.sequences)
+    def load_and_process_data(self):
+        sequences = pd.read_csv(self.PATH_SEQUENCES)
+        columns = [col for col in sequences.columns if col not in ["PATIENTNR", "DATE", "START_KAFTRIO"]]
+        sequences, boolean_indices = self.scale_and_reshape(sequences)
+        return sequences, boolean_indices, columns
         
+    @staticmethod
+    def scale_data(sequences):
+        scaler = MinMaxScaler()
+        return scaler.fit_transform(sequences)
+
+    @staticmethod
+    def scale_and_reshape(sequences):
+        sequences = sequences.sort_values(by=["PATIENTNR", "DATE"])
+        num_events = sequences.groupby("PATIENTNR").size().iloc[0]
+        num_sequences = len(sequences) // num_events
+        sequences = sequences.drop(columns=["PATIENTNR", "DATE", "START_KAFTRIO"])
+
+        boolean_columns = sequences.select_dtypes(include=['bool']).columns
+        boolean_indices = [sequences.columns.get_loc(col) for col in boolean_columns]
+
+        sequences = CF.scale_data(sequences)
+        sequences = sequences.reshape(num_sequences, num_events, sequences.shape[1])
+        return torch.Tensor(sequences), boolean_indices
+    
     def __len__(self):
         return len(self.sequences)
     
     def __getitem__(self, index):
         return self.sequences[index]
-    
-def scale_data(sequences):
-    scaler = MinMaxScaler()
-    sequences = scaler.fit_transform(sequences)
-    return sequences
 
-def scale_and_reshape(sequences):
-    sequences = sequences.sort_values(by=["PATIENTNR", "DATE"])
-
-    # Get dimensions
-    num_events = sequences.groupby("PATIENTNR").size().iloc[0]
-    num_sequences = int(len(sequences) / num_events)
-
-    # Remove redundant columns
-    sequences.drop(columns=["PATIENTNR", "DATE", "START_KAFTRIO"], inplace=True)
-
-    # scale data
-    sequences = scale_data(sequences)
-    sequences = sequences.reshape(num_sequences, num_events, sequences.shape[1])
-
-    # Update sequences
-    
-    # Convert data into tensors
-    sequences = torch.Tensor(sequences)
-    return sequences
+if __name__ == "__main__":
+    cf = CF()
