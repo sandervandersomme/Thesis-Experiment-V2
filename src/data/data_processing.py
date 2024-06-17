@@ -15,3 +15,6 @@ def flatten_into_events(data: torch.Tensor):
     """
     _, _, features = data.shape
     return data.reshape(-1, features)
+
+def generate_random_data(n_sequence, n_events, n_features):
+    return torch.rand((n_sequence, n_events, n_features))
