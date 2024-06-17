@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 
-from src.data.data_transformation import flatten_into_events, flatten_into_sequences
+from src.data.data_processing import flatten_into_events, flatten_into_sequences
 
 def embed_data(data: torch.Tensor, n_components=10):
     pca = PCA(n_components=n_components)
@@ -71,7 +71,7 @@ def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, 
 
 
 if __name__ == "__main__":
-    from src.data.random_data import generate_random_data
+    from src.data.data_processing import generate_random_data
     n_neighbors = 5
     n_components = 10
 

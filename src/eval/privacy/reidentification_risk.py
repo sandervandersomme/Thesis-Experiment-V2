@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 from sklearn.metrics.pairwise import cosine_similarity
 
 
-from src.data.random_data import generate_random_data
-from src.data.data_transformation import flatten_into_sequences
+from src.data.data_processing import generate_random_data
+from src.data.data_processing import flatten_into_sequences
 
 def reidentification_risk(train_data: torch.Tensor, syndata: torch.Tensor, reid_threshold: float):
     train_data = flatten_into_sequences(train_data)

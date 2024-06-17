@@ -21,7 +21,7 @@ def calculate_direct_matches(syndata: torch.Tensor, train_data: torch.Tensor, ma
 
 
 if __name__ == "__main__":
-    from src.data.random_data import generate_random_data
+    from src.data.data_processing import generate_random_data
     syndata = generate_random_data(200,5,20)
     traindata = generate_random_data(200,5,20)
 

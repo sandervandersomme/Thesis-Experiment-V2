@@ -55,7 +55,7 @@ def attack_timegan(model: TimeGAN, data):
     return outputs
 
 if __name__ == "__main__":
-    from src.data.random_data import generate_random_data
+    from src.data.data_processing import generate_random_data
     from src.eval.privacy.white_box_mia import WhiteBoxMIA
     from src.eval.privacy.black_box_mia import BlackBoxMia
     import argparse

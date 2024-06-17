@@ -89,7 +89,7 @@ def get_known_indices(unknown_indices:torch.Tensor, num_features):
     return known_indices
 
 if __name__ == "__main__":
-    from src.data.random_data import generate_random_data
+    from src.data.data_processing import generate_random_data
 
     # Example usage
     syndata = generate_random_data(400,5,20)
