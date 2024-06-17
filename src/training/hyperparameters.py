@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Tuple
-
+import optuna
 from src.models.models import RGAN, TimeGAN, RWGAN, TimeseriesClassifier, TimeseriesRegressor
 
 
@@ -91,21 +91,19 @@ def add_shape_to_params(hyperparams: dict, shape: tuple):
     })
     return hyperparams
 
-def select_hyperparams(dataset: str, model: str, shape: Tuple, default=False):
-    if default:
-        return get_default_params(model, shape)
-    file_path = f"outputs/hyperparams/{dataset}-{model}.json"
-    if file_exists(file_path):
-        hyperparams = load_params(file_path)
+def load_default_params(model, shape):
+    print("Selecting default params..")
+    params = default_params
+    if model == 'timegan': params.update(TimeGAN_params)
+    elif model == 'rwgan': params.update(RWGAN_params)
+    params = add_shape_to_params(params, shape)
+    return params 
+    
+def load_optimal_params(path, dataset, model, seed):
+    print("Selecting optimal parameters")
+    if os.path.isfile(path):
+        optuna.load_study(study_name=f"{dataset}-{model}-{seed}", storage=f"sqlite:///{path}/{dataset}-{model}-{seed}.db")
         hyperparams = add_shape_to_params(hyperparams, shape)
         return hyperparams
     else: 
-        return get_default_params(model, shape)
-
-def file_exists(file_path: str): return os.path.isfile(file_path)
-
-def load_params(path): 
-    with open(path, 'r') as file: return json.load(file)["params"]
-
-if __name__ == "__main__":
-    select_hyperparams('rwgan', 'cf')
+        raise FileNotFoundError
