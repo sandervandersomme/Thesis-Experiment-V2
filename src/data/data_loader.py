@@ -5,6 +5,8 @@ import pandas as pd
 
 from src.data.cf import CF
 from torch.utils.data import Dataset
+from src.data.cf_classification import create_cf_classification_data
+from src.data.cf_regression import create_cf_regression_data
 
 def load_syn_data(path): return torch.load(path)
 
@@ -12,6 +14,19 @@ def select_data(dataset: str) -> Dataset:
     "select and load dataset"
     if dataset == "cf":
         return CF()
+
+    raise NotImplementedError
+    
+def create_downstream_data(dataset: str, task: str, sequences: torch.Tensor, columns: List[str], name: str):
+    if dataset == "cf": return cf_downstream_data(task, sequences, columns, name)
+
+    raise NotImplementedError
+
+def cf_downstream_data(task, sequences, columns, name):
+    if task == "classification": return create_cf_classification_data(sequences, columns, name)
+    if task == "regression": return create_cf_regression_data(sequences, columns, name)
+
+    raise NotImplementedError
     
 def save_to_csv(sequences: torch.Tensor, labels: torch.Tensor, columns: List[str], filename: str):
     sequences_np = sequences.numpy()
