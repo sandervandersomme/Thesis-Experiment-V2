@@ -39,15 +39,22 @@ gen_models = {
     "timegan": TimeGAN
 }
 
-def select_downstream_model(task: str) -> DownstreamModel:
-    if task == "classification": return TimeseriesClassifier
-    elif task == "regression": return TimeseriesRegressor
 
-    raise NotImplementedError
+def load_downstream_model(model: str, hyperparams) -> DownstreamModel:
+    if model == "classifier": return TimeseriesClassifier(**hyperparams)
+    elif model == "regressor": return TimeseriesRegressor(**hyperparams)
+
+    raise NotImplementedError()
 
 def load_gen_model(model: str, hyperparams) -> GenModel:
     if model == "rgan": return RGAN(**hyperparams)
     elif model == "rwgan": return RWGAN(**hyperparams)
     elif model == "timegan": return TimeGAN(**hyperparams)
 
-    raise NotImplementedError
+    raise NotImplementedError()
+
+def task_to_model(task: str):
+    if task == "classification": return "classifier"
+    if task == "regressor": return "regressor"
+
+    raise NotImplementedError()
