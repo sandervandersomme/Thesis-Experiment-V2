@@ -1,23 +1,27 @@
 import argparse
-from src.data.data_loader import select_data
+from src.data.data_loader import select_data, create_downstream_data
 from src.data.data_processing import split_train_test
-from src.models.models import select_gen_model
-from src.training.hyperparameters import load_default_params, load_optimal_params
-from src.training.tuning import Tuner
+from src.models.models import load_gen_model, select_downstream_model, train_gen_model, train_downstream_model, GenModel
+from src.training.hyperparameters import load_default_params, load_optimal_params, add_shape_to_params
+from src.training.tuning import GenTuner, DownstreamTuner
+from src.eval.evaluator import Evaluator
 import torch
 from src.utilities.utils import set_device
 import os
+import pickle
 
 class Pipeline():
     def __init__(self, args):
         self.output_path = args.output_folder
         self.build_project_folder()
 
-        # Experiment setup
+        # pipeline setup
         self.task = args.task
-        self.name_model = args.model
         self.name_dataset = args.dataset
-        self.dataset = select_data(args.dataset)
+        self.models = args.models
+        self.num_instances = args.num_instances
+        self.num_syn_samples = args.num_syn_samples
+        self.num_syn_datasets = args.num_syn_datasets
 
         # Training parameters
         self.epochs = args.epochs
@@ -26,14 +30,28 @@ class Pipeline():
         self.seed = args.seed
 
         # Flags
-        self.flag_gen_tuning = args.gen_tuning
-        self.flag_down_tuning = args.down_tuning
-        self.flag_default_params = args.default_params
+        self.flag_gen_tuning = args.flag_gen_tuning
+        self.flag_down_tuning = args.flag_down_tuning
+        self.flag_default_params = args.flag_default_params
+        self.flag_training = args.flag_training
+        self.flag_generation = args.flag_generation
+        self.flag_evaluation = args.flag_evaluation
 
         # Data
+        self.dataset = select_data(args.dataset)
         self.train_data, self.test_data = self.process_data()
         self.train_shape = (len(self.train_data), *self.train_data[0].size())
         self.test_shape = (len(self.test_data), *self.test_data[0].size())
+
+        if self.task:
+            train_sequences = self.dataset[self.train_data.indices]
+            test_sequences = self.dataset[self.test_data.indices]
+            self.train_data_downstream = create_downstream_data(self.name_dataset, self.task, train_sequences, self.dataset.columns, f"train_real_{self.task}")
+            self.test_data_downstream = create_downstream_data(self.name_dataset, self.task, train_sequences, self.dataset.columns, f"test_real_{self.task}")
+
+        self.HYPERPARAM_DIR = f"{self.output_path}hyperparams/trials/"
+        self.MODEL_DIR = f"{self.output_path}models/"
+        self.SYNDATA_DIR = f"{self.output_path}syndata/"
 
     def process_data(self):
         print("Preparing data..")
@@ -45,58 +63,93 @@ class Pipeline():
         return train_data, test_data
 
     def execute(self):
-        # tuning
         if self.flag_gen_tuning:
             print("Start tuning generative model")
-            self.gen_tuning()
+            for model in self.models:
+                self.gen_tuning(model)
 
         if self.flag_down_tuning:
             print("Start tuning downstream model")
             self.down_tuning()
-        
-        # For num instances
-            # Load params
-            # train model
-            # generate data
-            # Evaluate data
+
+        # Model training
+        if self.flag_training:
+            # Loop through model types
+            for model_type in self.models:
+
+                # Load hyperparams
+                hyperparams = self.load_params(model_type)
+
+                # Train multiple instances
+                for instance_id in range(self.num_instances):
+                    model = load_gen_model(model_type, hyperparams)
+                    self.train(model)
+                    self.save_model(model, f"{self.name_dataset}-{model_type}-{instance_id}")
+
+                    # Generate multiple synthetic datasets
+                    for syndata_id in range(self.num_syn_datasets):
+                        syndata = self.generate(model)
+                        self.save_syndata(syndata, f"{self.name_dataset}-{model_type}-{syndata_id}")
+
+        if self.flag_evaluation:
+            evaluator = Evaluator()
 
         # save results
 
-    def gen_tuning(self): 
-        tuner = Tuner(self.train_data, self.name_dataset, self.seed, self.output_path)
-        model = select_gen_model(self.name_model)
+    def gen_tuning(self, model_class): 
+        tuner = GenTuner(self.train_data, self.name_dataset, self.seed, self.output_path)
+        model = load_gen_model(model_class)
         tuner.tune(model, self.trials, self.folds, self.epochs)
 
-    def down_tuning(self): 
-        tuner = Tuner(self.train_data, self.name_dataset, self.seed, self.output_path)
-        model = select_gen_model(self.name_model)
+    def down_tuning(self):
+        tuner = DownstreamTuner(self.train_data_downstream, self.name_dataset, self.seed, self.output_path)
+        model = select_downstream_model(self.task)
         tuner.tune(model, self.trials, self.folds, self.epochs)
 
-    def train(self): pass
+    def load_params(self, model_class: str):
+        if self.flag_default_params: hyperparams = load_default_params(model_class)
+        else: 
+            filename = f"{self.name_dataset}-{model_class}-{self.seed}"
+            hyperparams = load_optimal_params(self.HYPERPARAM_DIR, filename)
+        hyperparams = add_shape_to_params(hyperparams, self.train_shape)
+        return hyperparams
+    
+    def train(self, model: GenModel): train_gen_model(model, self.train_data, self.epochs)        
+    def generate(self, model: GenModel): model.generate_data(self.num_syn_samples)
     def evaluate(self): pass
+    def save_model(self, model, model_name): pickle.dump(model, open(os.path.join(self.MODEL_DIR, model_name + '.pkl'), 'wb'))
+    def save_syndata(self, syndata, syndata_name): torch.save(syndata, os.path.join(self.SYNDATA_DIR, syndata_name + '.pt'))
 
     def build_project_folder(self):
         os.makedirs(f"{self.output_path}syndata", exist_ok=True)
         os.makedirs(f"{self.output_path}hyperparams/trials/", exist_ok=True)
         os.makedirs(f"{self.output_path}results", exist_ok=True)
         os.makedirs(f"{self.output_path}losses", exist_ok=True)
-        
+        os.makedirs(f"{self.output_path}models", exist_ok=True)
+
             
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset", default='cf')
-    parser.add_argument("--model")
-    parser.add_argument("--task") 
-    parser.add_argument("--gen_tuning", action="store_true")
-    parser.add_argument("--down_tuning", action="store_true")
+    parser.add_argument("--models", type=str, nargs='*')
+    parser.add_argument("--task", type=str)
+    parser.add_argument("--flag_gen_tuning", action="store_true")
+    parser.add_argument("--flag_down_tuning", action="store_true")
+    parser.add_argument("--flag_default_params", action="store_true")
+    parser.add_argument("--flag_training", action="store_true")
+    parser.add_argument("--flag_generation", action="store_true")
+    parser.add_argument("--flag_evaluation", action="store_true")
     parser.add_argument("--output_folder", default="outputs/exp1/")
     parser.add_argument("--split_size", default=0.7)
-    parser.add_argument("--epochs", default=50)
-    parser.add_argument("--trials", default=10)
-    parser.add_argument("--folds", default=10)
+    parser.add_argument("--epochs", default=50, type=int)
+    parser.add_argument("--trials", default=10, type=int)
+    parser.add_argument("--folds", default=10, type=int)
+    parser.add_argument("--num_instances", default=3, type=int)
+    parser.add_argument("--num_syn_datasets", default=3, type=int)
+    parser.add_argument("--num_syn_samples", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--default_params", action="store_true")
     args = parser.parse_args()
 
     pipeline = Pipeline(args)
     pipeline.execute()
+
