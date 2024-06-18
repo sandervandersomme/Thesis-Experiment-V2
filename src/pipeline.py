@@ -1,7 +1,7 @@
 import argparse
 from src.data.data_loader import select_data, create_downstream_data
 from src.data.data_processing import split_train_test
-from src.models.models import load_gen_model, select_downstream_model, train_gen_model, train_downstream_model, GenModel
+from src.models.models import load_gen_model, load_downstream_model, train_gen_model, train_downstream_model, GenModel, task_to_model
 from src.training.hyperparameters import load_default_params, load_optimal_params, add_shape_to_params
 from src.training.tuning import GenTuner, DownstreamTuner
 from src.eval.evaluator import Evaluator
@@ -89,21 +89,20 @@ class Pipeline():
                     # Generate multiple synthetic datasets
                     for syndata_id in range(self.num_syn_datasets):
                         syndata = self.generate(model)
-                        self.save_syndata(syndata, f"{self.name_dataset}-{model_type}-{syndata_id}")
+                        self.save_syndata(syndata, f"{self.name_dataset}-{model_type}-{instance_id}-{syndata_id}")
 
         if self.flag_evaluation:
-            evaluator = Evaluator()
+            self.evaluate()
 
         # save results
 
     def gen_tuning(self, model_class): 
         tuner = GenTuner(self.train_data, self.name_dataset, self.seed, self.output_path)
-        model = load_gen_model(model_class)
-        tuner.tune(model, self.trials, self.folds, self.epochs)
+        tuner.tune(model_class, self.trials, self.folds, self.epochs)
 
     def down_tuning(self):
         tuner = DownstreamTuner(self.train_data_downstream, self.name_dataset, self.seed, self.output_path)
-        model = select_downstream_model(self.task)
+        model = task_to_model(self.task)
         tuner.tune(model, self.trials, self.folds, self.epochs)
 
     def load_params(self, model_class: str):
@@ -113,17 +112,37 @@ class Pipeline():
             hyperparams = load_optimal_params(self.HYPERPARAM_DIR, filename)
         hyperparams = add_shape_to_params(hyperparams, self.train_shape)
         return hyperparams
-    
+
+    def evaluate(self):
+        results = {}
+        evaluator = Evaluator()
+
+        # Select criteria
+
+        # Loop through all synthetic datasets
+        for model_type in self.models:
+            for model_id in range(self.num_instances):
+                for syndata_id in range(self.num_syn_datasets):
+                    dataset_name = f"{self.name_dataset}-{model_type}-{model_id}-{syndata_id}"
+                    dataset_path = os.path.join(self.SYNDATA_DIR, dataset_name + '.pt')
+
+                    # Load dataset
+                    if os.path.exists(dataset_path):
+                        syndata = torch.load(dataset_path)
+
+                        # Evaluate dataset
+                        evaluator.evaluate(syndata, dataset_name, model_type, model_id, syndata_id)
+                        
+
     def train(self, model: GenModel): train_gen_model(model, self.train_data, self.epochs)        
     def generate(self, model: GenModel): model.generate_data(self.num_syn_samples)
-    def evaluate(self): pass
     def save_model(self, model, model_name): pickle.dump(model, open(os.path.join(self.MODEL_DIR, model_name + '.pkl'), 'wb'))
     def save_syndata(self, syndata, syndata_name): torch.save(syndata, os.path.join(self.SYNDATA_DIR, syndata_name + '.pt'))
 
     def build_project_folder(self):
         os.makedirs(f"{self.output_path}syndata", exist_ok=True)
         os.makedirs(f"{self.output_path}hyperparams/trials/", exist_ok=True)
-        os.makedirs(f"{self.output_path}results", exist_ok=True)
+        os.makedirs(f"{self.output_path}eval", exist_ok=True)
         os.makedirs(f"{self.output_path}losses", exist_ok=True)
         os.makedirs(f"{self.output_path}models", exist_ok=True)
 
