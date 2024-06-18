@@ -4,7 +4,7 @@ from typing import List
 
 def create_cf_classification_data(sequences: torch.Tensor, columns: List[str], name: str):
     target_var = columns.index("PPFEV1")
-    labels = (sequences[:, -1, target_var] > sequences[:, 0, target_var]).long().unsqueeze(dim=1)
+    labels = (sequences[:, -1, target_var] > sequences[:, 0, target_var]).float().unsqueeze(dim=1)
 
     sequences = torch.cat((sequences[:, :, :target_var], sequences[:, :, target_var+1:]), dim=2)
     columns = [col for col in columns if col != "PPFEV1"]
