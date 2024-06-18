@@ -1,7 +1,7 @@
 import torch
 
 from src.models.gen_model import GenModel
-from src.models.models import select_gen_model, train_model, RWGAN, TimeGAN
+from src.models.models import load_gen_model, train_gen_model, RWGAN, TimeGAN
 from src.training.hyperparameters import get_default_params, add_shape_to_params
 
 # MIA stands for membership inference attack
@@ -70,13 +70,13 @@ if __name__ == "__main__":
     test_data = generate_random_data(20, 5, 20)
 
     # setup GAN model
-    model: GenModel = select_gen_model(args.model)
+    model: GenModel = load_gen_model(args.model)
     hyperparams = get_default_params(model.NAME, train_data.shape)
     hyperparams = add_shape_to_params(hyperparams, train_data.shape)
 
     # Train GAN model
     model = model(**hyperparams)
-    train_model(model, train_data)
+    train_gen_model(model, train_data)
 
     # Perform White Box attack
     # white_box_mia = WhiteBoxMIA(model) 
