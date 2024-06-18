@@ -62,7 +62,7 @@ def kolmogorov_smirnov(test_data: torch.Tensor, syndata: torch.Tensor, columns: 
         "p_values" : p_values
     }
 
-def differences_variable_correlations(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
+def avg_diff_correlations(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
     # Calculates the difference between correlation matrices of real and synthetic data 
     # (i.e. how do correlations between variable pair differ between real and synthetic data)
 
@@ -78,7 +78,7 @@ def differences_variable_correlations(test_data: torch.Tensor, syndata: torch.Te
         "Magnitude of difference in variable correlations": frob_norm
     }
 
-def wasserstein_distance_joint(test_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
+def wasserstein_distance(test_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
     """
     Calculates the wasserstein distance between real and synthetic eventlogs
     """

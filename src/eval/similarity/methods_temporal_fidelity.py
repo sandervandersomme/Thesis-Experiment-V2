@@ -5,7 +5,7 @@ import numpy as np
 from src.eval.similarity.methods_fidelity import similarity_correlation_matrix
 from src.eval.visualise import visualise_longshortterm_correlations, visualise_inter_timestep_distances, visualise_tscor_similarities
 
-def difference_timestep_distributions(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
+def avg_diff_ts_distributions(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
     """
     For each time-step, calculates the wasserstein distance between the real and synthetic time step
     """
@@ -33,7 +33,7 @@ def difference_timestep_distributions(test_data: torch.Tensor, syndata: torch.Te
         "average_distance": average_distance,
     }
 
-def difference_inter_timestep_distances(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
+def avg_diff_inter_ts_distances(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
     """
     Calculates the size of the difference between real and synthetic wasserstein distance matrices
     """
@@ -83,7 +83,7 @@ def inter_timestep_distances(data: torch.Tensor):
 
     return distance_matrix
 
-def similarities_long_short_term_correlations(test_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
+def avg_similarity_longshortterm_correlations(test_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
     """
     For each feature, calculates the difference between real and synthetic time-step correlations
     """
