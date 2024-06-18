@@ -91,19 +91,20 @@ def add_shape_to_params(hyperparams: dict, shape: tuple):
     })
     return hyperparams
 
-def load_default_params(model, shape):
+def load_default_params(model):
     print("Selecting default params..")
     params = default_params
     if model == 'timegan': params.update(TimeGAN_params)
     elif model == 'rwgan': params.update(RWGAN_params)
-    params = add_shape_to_params(params, shape)
     return params 
     
-def load_optimal_params(path, dataset, model, seed):
-    print("Selecting optimal parameters")
+def load_optimal_params(dir, filename):
+    print("Selecting optimal parameters..")
+    path = os.path.join(dir, filename + '.db')
+    
     if os.path.isfile(path):
-        optuna.load_study(study_name=f"{dataset}-{model}-{seed}", storage=f"sqlite:///{path}/{dataset}-{model}-{seed}.db")
-        hyperparams = add_shape_to_params(hyperparams, shape)
-        return hyperparams
-    else: 
-        raise FileNotFoundError
+        study = optuna.load_study(study_name=filename, storage=f"sqlite:///{path}")
+        best_trial = study.best_trial
+        return best_trial.params
+    
+    raise FileNotFoundError(f"No such file: '{path}'")
