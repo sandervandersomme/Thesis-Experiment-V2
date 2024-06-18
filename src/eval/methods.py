@@ -27,18 +27,15 @@ def evaluate_fidelity(test_data, syn_data, columns):
 
     return results
 
-
-similarity_methods = [
-    stats,
-    kolmogorov_smirnov,
-    differences_variable_correlations,
-    wasserstein_distance_joint
-]
-
 def evaluate_temporal_fidelity(test_data, syn_data, columns):
     results = {}
-    for method in temporal_fidelity_methods:
-        results[method.__name__] = method(test_data, syn_data, columns)
+    
+    avg_diff_tsdis = difference_timestep_distributions(test_data, syn_data, columns)
+    avg_diff_inter_ts_distances = difference_inter_timestep_distances(test_data, syn_data, columns)
+    long_short_simcors = similarities_long_short_term_correlations(test_data, syn_data, columns)
+    results.update(avg_diff_tsdis)
+    results.update(avg_diff_inter_ts_distances)
+    results.update(long_short_simcors)
 
 temporal_fidelity_methods = [
     difference_timestep_distributions,
