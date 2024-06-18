@@ -4,17 +4,21 @@ from typing import Tuple
 import optuna
 from src.models.models import RGAN, TimeGAN, RWGAN, TimeseriesClassifier, TimeseriesRegressor
 
-
-def get_grid(model_class, trial, shape):
-    if issubclass(model_class, RGAN):
+def get_gen_grid(model_class: str, trial, shape):
+    if model_class == "rgan":
         grid = default_grid(trial)
-    elif issubclass(model_class, TimeGAN):
+    elif model_class == "timegan":
         grid = timegan_grid(trial)
-    elif issubclass(model_class, RWGAN):
+    elif model_class == "rwgan":
         grid = rwgan_grid(trial)
-    elif issubclass(model_class, TimeseriesClassifier):
+
+    grid = add_shape_to_params(grid, shape)
+    return grid
+
+def get_downstream_grid(model: str, trial, shape):
+    if model == "classifier":
         grid = default_grid(trial)
-    elif issubclass(model_class, TimeseriesRegressor):
+    elif model == "regressor":
         grid = default_grid(trial)
 
     grid = add_shape_to_params(grid, shape)
@@ -91,7 +95,7 @@ def add_shape_to_params(hyperparams: dict, shape: tuple):
     })
     return hyperparams
 
-def load_default_params(model):
+def load_default_params(model: str):
     print("Selecting default params..")
     params = default_params
     if model == 'timegan': params.update(TimeGAN_params)
