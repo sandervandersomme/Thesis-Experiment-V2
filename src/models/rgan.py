@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 
 from src.models.gan import Generator, Discriminator
@@ -23,10 +22,7 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir:str=None, log_loss_dir:str=None):
-    if log_run_dir:
-        writer = SummaryWriter(log_run_dir)
-
+def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:str=None):
     # Setup training
     half_batch = int(model.batch_size/2)
     train_loader = DataLoader(train_data, batch_size=half_batch, shuffle=True)
@@ -67,22 +63,10 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_run_dir:s
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            
-            if log_run_dir:
-                writer.close()
             break
-
-        # Logging losses
-        if log_run_dir:
-            writer.add_scalar('Loss/disc', disc_loss, epoch)
-            writer.add_scalar('Loss/gen', gen_loss, epoch)
-            writer.add_scalar('Loss/val', val_loss, epoch)
 
         print(f"Epoch {epoch+1}/{epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
     
-    if log_run_dir:
-        writer.close()
-
     if log_loss_dir:
         plot_losses(f"{log_loss_dir}loss.png", gen_losses, disc_losses)
 

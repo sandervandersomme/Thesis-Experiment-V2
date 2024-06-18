@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from src.models.gan import Generator, Discriminator
 from src.models.gen_model import GenModel
 
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
 from src.training.early_stopping import EarlyStopping
 
@@ -86,7 +85,7 @@ class TimeGAN(GenModel):
             generated_data = self.recovery(supervised_embeddings)
             return generated_data    
 
-def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_data: Dataset=None, log_run_dir: str=None, log_loss_dir:str=None):
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:str=None):
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
@@ -112,27 +111,18 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, val_dat
     model.discriminator.train()
 
     # Train
-    if val_data:
-        val_loader = DataLoader(val_data, batch_size=model.batch_size, shuffle=False)
-        train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
-        train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, val_loader, log_run_dir, log_loss_dir)
-    else:
-        train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, log_run_dir, log_loss_dir)
-        train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, log_run_dir, log_loss_dir)
-    best_val_loss = train_joint(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss, log_run_dir, log_loss_dir)
+    train_embedding_network(model, train_loader, epochs, embedder_optimizer, recovery_optimizer, mse_loss, log_loss_dir)
+    train_supervised(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, mse_loss, log_loss_dir)
+    best_val_loss = train_joint(model, train_loader, epochs, supervisor_optimizer, generator_optimizer, discriminator_optimizer, embedder_optimizer, recovery_optimizer, bce_loss, mse_loss, log_loss_dir)
 
     return best_val_loss
 
-def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, val_loader: DataLoader, log_run_dir:str=None, log_loss_dir: str=None):
-    if log_run_dir:
-        writer = SummaryWriter(f"{log_run_dir}embedding/")
-    
+def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_loss_dir: str=None):
     # Train embedder and recovery: minimize construction loss
     print('Start Training Phase 1: Minimize reconstruction loss')
 
     # Track losses
     train_losses = []
-    val_losses = []
 
     # setup early stopping
     early_stopping = EarlyStopping(model.patience, model.min_delta)
@@ -145,52 +135,28 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
         loss = train_autoencoder(model, train_loader, mse_loss, embedder_optimizer, recovery_optimizer)
         train_losses.append(loss.item())
         
-        # Validate model
-        if val_loader: 
-            model.recovery.eval()
-            model.embedder.eval()
-            val_loss = validate_autoencoder(model, val_loader, mse_loss)  
-            val_losses.append(val_loss.item())
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-            early_stopping(val_loss)
-        else:
-            # Check if best loss has increased
-            if loss < best_val_loss:
-                best_val_loss = loss
-            early_stopping(loss)
+        if loss < best_val_loss:
+            best_val_loss = loss
+        early_stopping(loss)
             
         print(f"Epoch {epoch+1}/{epochs}, reconstruction Loss: {loss.item()}")
 
         # Check for early stopping
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            if log_run_dir:
-                writer.close()
             break
-
-        # Log losses to TensorBoard
-        if log_run_dir:
-            writer.add_scalar("Loss/reconstruction loss", loss, epoch)
-            writer.add_scalar("Loss/critic_real", val_loss, epoch)
 
     print("Training phase 1 complete!")
 
-    if log_run_dir:
-        writer.close()
-
     if log_loss_dir:
-        plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses, val_losses)
+        plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses)
 
-def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss,  val_loader: DataLoader, log_run_dir:str=None, log_loss_dir: str=None):
-    if log_run_dir:
-        writer = SummaryWriter(f"{log_run_dir}embedding/")
+def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_loss_dir: str=None):
     
     # Training phase 2: Minimize supervised loss
     print('Start Training Phase 2: Minimize unsupervised loss')
 
     train_losses = []
-    val_losses = []
 
     # setup early stopping
     early_stopping = EarlyStopping(model.patience, model.min_delta)
@@ -203,45 +169,22 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_
         loss = train_supervisor_embedder(model, train_loader, mse_loss, sup_optim, emb_optim)
         train_losses.append(loss.item())
 
-        # Validate model
-        if val_loader:
-            model.supervisor.eval()
-            model.embedder.eval()
-            val_loss = validate_supervisor(model, val_loader, mse_loss)  
-            val_losses.append(val_loss.item())
-            # Check if best loss has increased
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-            early_stopping(val_loss)
-        else: 
-            # Check if best loss has increased
-            if loss < best_val_loss:
-                best_val_loss = loss
-            early_stopping(loss)
+        # Check if best loss has increased
+        if loss < best_val_loss:
+            best_val_loss = loss
+        early_stopping(loss)
             
         print(f"Epoch {epoch+1}/{epochs}, Supervised Loss: {loss.item()}")
 
         # Check for early stopping
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            if log_run_dir:
-                writer.close()
             break
 
-        # Log losses to TensorBoard
-        if log_run_dir:
-            writer.add_scalar("Loss/supervisor loss", loss, epoch)
-            writer.add_scalar("Loss/val loss", val_loss, epoch)
-
-    if log_run_dir:
-        writer.close()
-
     if log_loss_dir:
-        plot_supervised_loss(f"{log_loss_dir}supervised_loss.png", train_losses, val_losses)
+        plot_supervised_loss(f"{log_loss_dir}supervised_loss.png", train_losses)
     
-def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_run_dir:str=None, log_loss_dir: str=None):
-    if log_run_dir:
-        writer = SummaryWriter(f"{log_run_dir}joint/")
+def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_loss_dir: str=None):
     
     # Training phase 3: Joint training
     print('Start Training Phase 3: Joint training')
@@ -282,12 +225,6 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
             val_loss = validate_generator(model, bce_loss)
             val_losses.append(val_loss.item())
 
-            # Log losses to TensorBoard
-            if log_run_dir:
-                writer.add_scalar("Loss/generator loss", gen_loss, epoch_idx2)
-                writer.add_scalar("Loss/embedder loss", emb_loss, epoch_idx2)
-                writer.add_scalar("Loss/validation loss", val_loss, epoch_idx2) 
-
             epoch_idx2 += 1
 
         # Train discriminator
@@ -297,9 +234,6 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
         disc_loss = train_discriminator(model, train_loader, bce_loss, discriminator_optimizer)
         disc_losses.append(disc_loss.item())
 
-        if log_run_dir:
-            writer.add_scalar("Loss/discriminator loss", disc_loss, epoch)
-
         # Check if best loss has increased
         if val_loss < best_val_loss:
             best_val_loss = val_loss
@@ -308,14 +242,9 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            if log_run_dir:
-                writer.close()
             break
         
         print(f"Epoch {epoch+1}/{epochs}, Generator loss: {gen_loss.item()}, Embedder loss: {emb_loss.item()}, Discriminator Loss: {disc_loss.item()}, val loss: {val_loss}")
-    
-    if log_run_dir:
-        writer.close()
 
     if log_loss_dir:
         plot_disc_losses(f"{log_loss_dir}disc_loss.png", disc_losses, val_losses)
@@ -420,7 +349,7 @@ def train_discriminator(model: TimeGAN, dataloader: DataLoader, bce_loss: torch.
 
         disc_optim.zero_grad()
         if disc_loss > model.disc_loss_threshold:
-        # Backpropagate
+            # Backpropagate
             disc_loss.backward(retain_graph=True)
             disc_optim.step()
     avg_loss = total_loss / len(dataloader)
@@ -468,37 +397,6 @@ def embedder_loss(model: TimeGAN, sequences: torch.Tensor, mse_loss: torch.nn.MS
 
     return E_loss
 
-def validate_autoencoder(model: TimeGAN, val_loader: DataLoader, mse_loss: torch.nn.MSELoss):
-    total_loss = 0.0
-
-    with torch.no_grad():  # Disable gradient computation
-        for _, sequences in enumerate(val_loader):
-            sequences = sequences.to(model.device)
-
-            embeddings = model.embedder(sequences)
-            reconstructions = model.recovery(embeddings)
-            loss = model.scaling_factor * torch.sqrt(mse_loss(reconstructions, sequences))
-
-            total_loss += loss
-
-    avg_val_loss = total_loss / len(val_loader)
-    return avg_val_loss
-
-def validate_supervisor(model: TimeGAN, val_loader: DataLoader, mse_loss: torch.nn.MSELoss):
-    total_loss = 0.0
-    with torch.no_grad():  # Disable gradient computation
-        for _, sequences in enumerate(val_loader):
-            sequences = sequences.to(model.device)
-
-            embeddings = model.embedder(sequences)
-            supervised_embeddings = model.supervisor(embeddings)
-            supervised_loss = mse_loss(embeddings[:,1:,:], supervised_embeddings[:,:-1,:])
-
-            total_loss += supervised_loss
-    avg_loss = total_loss / len(val_loader)
-
-    return avg_loss
-
 def validate_generator(model: TimeGAN, bce_loss: torch.nn.BCELoss):
     with torch.no_grad():
         # Forward pass Generator
@@ -538,12 +436,9 @@ def discriminator_loss(model: TimeGAN, sequences: torch.Tensor, bce_loss: torch.
     discriminator_loss = loss_fake + loss_real + loss_fake_e * model.gamma_weight
     return discriminator_loss
 
-def plot_reconstruction_loss(path: str, train_losses, val_losses):
+def plot_reconstruction_loss(path: str, train_losses):
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, marker='o', linestyle='-', label = "Reconstruction Loss")
-    plt.plot(val_losses, marker='o', linestyle='-', label = "Validation Loss")
-    # plt.plot(train_losses.numpy(), marker='o', linestyle='-', label = "Reconstruction Loss")
-    # plt.plot(train_losses.numpy(), marker='o', linestyle='-', label = "Reconstruction Loss")
 
     plt.title('Loss Over Epochs')
     plt.xlabel('Epoch')
@@ -554,12 +449,9 @@ def plot_reconstruction_loss(path: str, train_losses, val_losses):
     plt.savefig(f"{path}")  # Save the figure to a file
     plt.close()
 
-def plot_supervised_loss(path: str, train_losses, val_losses):
+def plot_supervised_loss(path: str, train_losses):
     plt.figure(figsize=(10, 5))
     plt.plot(train_losses, marker='o', linestyle='-', label = "Supervised Loss")
-    plt.plot(val_losses, marker='o', linestyle='-', label = "Validation Loss")
-    # plt.plot(supervised_loss.numpy(), marker='o', linestyle='-', label = "Supervised Loss")
-
     plt.title('Loss Over Epochs')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
@@ -569,7 +461,7 @@ def plot_supervised_loss(path: str, train_losses, val_losses):
     plt.savefig(f"{path}") # Save the figure to a file
     plt.close()
 
-def plot_disc_losses(path: str, losses_disc, val_losses):
+def plot_disc_losses(path: str, losses_disc):
     plt.figure(figsize=(10, 5))
     plt.plot(losses_disc, marker='o', linestyle='-', label = "Discriminator Loss")
 

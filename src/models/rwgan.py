@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader
 
 from src.models.gen_model import GenModel
@@ -52,10 +51,7 @@ class ClipConstraint():
         for p in model.parameters():
             p.data.clamp_(-self.clip_value, self.clip_value)
 
-def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_run_dir:str=None, log_loss_dir:str=None):
-    if log_run_dir:
-        writer = SummaryWriter(log_run_dir)
-
+def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_loss_dir:str=None):
     # Setup training
     optimizer_generator = torch.optim.RMSprop(model.generator.parameters(), lr=model.learning_rate)
     optimizer_critic = torch.optim.RMSprop(model.critic.parameters(), lr=model.learning_rate)
@@ -92,24 +88,13 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_run_dir:
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            if log_run_dir:
-                writer.close()
             break
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
-        # Log losses to TensorBoard
-        if log_run_dir:
-            writer.add_scalar("Loss/gen", gen_loss, epoch)
-            writer.add_scalar("Loss/critic_real", critic_loss, epoch)
-            writer.add_scalar("Loss/val", val_loss, epoch)
-
         print(f"Epoch {epoch+1}/{epochs}, Loss C-real: {critic_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
-
-    if log_run_dir:
-        writer.close()
 
     if log_loss_dir:
         plot_losses(f"{log_loss_dir}loss.png", gen_losses, critic_losses)

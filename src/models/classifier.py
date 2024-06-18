@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader, Dataset
 
 import matplotlib.pyplot as plt
 
-from torch.utils.tensorboard import SummaryWriter
 from src.models.downsteam_model import DownstreamModel
 from src.training.early_stopping import EarlyStopping
 
@@ -26,10 +25,7 @@ class TimeseriesClassifier(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
 
-def train_classifier(model: TimeseriesClassifier, train_data: Dataset, val_data: Dataset, epochs: int, log_run_dir: str=None, log_loss_dir:str=None):
-    if log_run_dir:
-        writer = SummaryWriter(log_run_dir)
-
+def train_classifier(model: TimeseriesClassifier, train_data: Dataset, val_data: Dataset, epochs: int, log_loss_dir:str=None):
     # Setup training
     loss_fn = nn.BCEWithLogitsLoss().to(model.device)
     optimizer = torch.optim.Adam(model.parameters(), lr=model.learning_rate)
@@ -59,22 +55,13 @@ def train_classifier(model: TimeseriesClassifier, train_data: Dataset, val_data:
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
             break
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
-        # Log losses to TensorBoard
-        if log_run_dir:
-            writer.add_scalar("Loss/train", loss, epoch)
-            writer.add_scalar("Loss/validation", val_loss, epoch)
-
         print(f'Epoch {epoch+1}/{epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
-
-    if log_run_dir:
-        writer.close()
     
     if log_loss_dir:
         plot_losses(f"{log_loss_dir}loss.png", train_losses, val_losses)

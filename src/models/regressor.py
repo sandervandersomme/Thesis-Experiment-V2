@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 
-from torch.utils.tensorboard import SummaryWriter
 from torch.utils.data import DataLoader, Dataset
 
 from src.models.downsteam_model import DownstreamModel
@@ -27,10 +26,7 @@ class TimeseriesRegressor(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
     
-def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Dataset, epochs: int, log_run_dir:str=None, plot_path:str=None):
-    if log_run_dir:
-        writer = SummaryWriter(log_run_dir)
-
+def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Dataset, epochs: int, plot_path:str=None):
     loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=model.learning_rate)
     train_loader = DataLoader(train_data, batch_size=model.batch_size, shuffle=True)
@@ -61,22 +57,13 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Datas
         early_stopping(val_loss)
         if early_stopping.early_stop:
             print(f"Early stopping at epoch {epoch+1}")
-            writer.close()
             break
 
         # Check if best loss has increased (for hyperparameter optimization)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
-        # Log losses to TensorBoard
-        if log_run_dir:
-            writer.add_scalar("Loss/train", loss, epoch)
-            writer.add_scalar("Loss/validation", val_loss, epoch)
-
         print(f'Epoch {epoch+1}/{epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
-
-    if log_run_dir:
-        writer.close()
     
     # Visualise losses over epochs
     if plot_path:
