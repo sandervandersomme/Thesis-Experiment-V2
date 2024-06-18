@@ -4,8 +4,8 @@ from optuna.pruners import MedianPruner
 from torch.utils.data import Dataset, Subset
 from sklearn.model_selection import KFold
 
-from src.training.hyperparameters import get_grid
-from src.models.models import train_gen_model, train_downstream_model
+from src.training.hyperparameters import get_gen_grid, get_downstream_grid
+from src.models.models import train_gen_model, train_downstream_model, load_gen_model, load_downstream_model
 
 class Tuner:
     def __init__(self, dataset: Dataset, name_data: str, seed: int, exp_dir: str):
@@ -14,9 +14,8 @@ class Tuner:
         self.seed = seed
         self.parameter_folder = exp_dir + "hyperparams/"
 
-    def tune(self, model, trials, folds, epochs):
-        suffix = f"{self.name_data}-{model.NAME}-{self.seed}"
-        print(f"sqlite:///{self.parameter_folder}trials/{suffix}.db")
+    def tune(self, model: str, trials: int, folds: int, epochs: int):
+        suffix = f"{self.name_data}-{model}-{self.seed}"
         storage = optuna.storages.RDBStorage(url=f'sqlite:///{self.parameter_folder}trials/{suffix}.db')
 
         study = optuna.create_study(
@@ -32,9 +31,9 @@ class GenTuner(Tuner):
     def __init__(self, dataset: Dataset, name_data: str, seed: int, exp_dir: str):
         super().__init__(dataset, name_data, seed, exp_dir)
 
-    def objective(self, trial, model_class, folds, epochs):
+    def objective(self, trial, model_class: str, folds: int, epochs: int):
         self.shape = (len(self.dataset), *self.dataset[0].shape)
-        hyperparams = get_grid(model_class, trial, self.shape)
+        hyperparams = get_gen_grid(model_class, trial, self.shape)
         val_losses = []
 
         # Cross-validation
@@ -46,19 +45,20 @@ class GenTuner(Tuner):
             train_data = Subset(self.dataset, train_idx)
 
             # Load and train model
-            model = model_class(**hyperparams)
+            model = load_gen_model(model_class, hyperparams)
             fold_val_loss = train_gen_model(model, train_data, epochs)
             val_losses.append(fold_val_loss)
 
         avg_val_loss = sum(val_losses) / len(val_losses)
         return avg_val_loss
 
+
 class DownstreamTuner(Tuner):
     def __init__(self, dataset: Dataset, name_data: str, seed: int, exp_dir: str):
         super().__init__(dataset, name_data, seed, exp_dir)
 
-    def objective(self, trial, model_class, folds, epochs):
-        hyperparams = get_grid(model_class, trial, self.dataset.sequences.shape)
+    def objective(self, trial, model_class: str, folds: int, epochs: int):
+        hyperparams = get_downstream_grid(model_class, trial, self.dataset.sequences.shape)
         val_losses = []
 
         # Cross-validation
@@ -71,7 +71,7 @@ class DownstreamTuner(Tuner):
             val_data = Subset(self.dataset, val_idx)
 
             # Load and train model
-            model = model_class(**hyperparams)
+            model = load_downstream_model(model_class, **hyperparams)
             fold_val_loss = train_downstream_model(model, train_data, epochs, val_data)
             val_losses.append(fold_val_loss)
 
