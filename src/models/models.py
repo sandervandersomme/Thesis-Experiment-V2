@@ -10,17 +10,23 @@ from src.models.timegan import TimeGAN, train_TimeGAN
 from src.models.gen_model import GenModel
 from src.models.downsteam_model import DownstreamModel
 
-def train_model(model, train_data: torch.Tensor, epochs:int, val_data: torch.Tensor=None, log_run_dir: str=None, log_loss_dir: str=None):
+def train_gen_model(model, train_data: torch.Tensor, epochs:int, log_loss_dir: str=None):
     if isinstance(model, RGAN):
-        return train_RGAN(model, train_data, epochs, log_run_dir, log_loss_dir)
+        return train_RGAN(model, train_data, epochs, log_loss_dir)
     elif isinstance(model, TimeGAN):
-        return train_TimeGAN(model, train_data, epochs, val_data, log_run_dir, log_loss_dir)
+        return train_TimeGAN(model, train_data, epochs, log_loss_dir)
     elif isinstance(model, RWGAN):
-        return train_RWGAN(model, train_data, epochs, log_run_dir, log_loss_dir)
-    elif isinstance(model, TimeseriesClassifier):
-        return train_classifier(model, train_data, val_data, epochs, log_run_dir, log_loss_dir)
+        return train_RWGAN(model, train_data, epochs, log_loss_dir)
+
+    raise NotImplementedError
+    
+def train_downstream_model(model, train_data: torch.Tensor, epochs:int, val_data: torch.Tensor=None, log_loss_dir: str=None):
+    if isinstance(model, TimeseriesClassifier):
+        return train_classifier(model, train_data, val_data, epochs, log_loss_dir)
     elif isinstance(model, TimeseriesRegressor):
-        return train_regressor(model, train_data, val_data, epochs, log_run_dir, log_loss_dir)
+        return train_regressor(model, train_data, val_data, epochs, log_loss_dir) 
+
+    raise NotImplementedError
     
 downstream_models = {
     "classifier": TimeseriesClassifier,
@@ -33,8 +39,15 @@ gen_models = {
     "timegan": TimeGAN
 }
 
-def select_downstream_model(model: str) -> DownstreamModel:
-    return downstream_models[model]
+def select_downstream_model(task: str) -> DownstreamModel:
+    if task == "classification": return TimeseriesClassifier
+    elif task == "regression": return TimeseriesRegressor
 
-def select_gen_model(model: str) -> GenModel:
-    return gen_models[model]
+    raise NotImplementedError
+
+def load_gen_model(model: str, hyperparams) -> GenModel:
+    if model == "rgan": return RGAN(**hyperparams)
+    elif model == "rwgan": return RWGAN(**hyperparams)
+    elif model == "timegan": return TimeGAN(**hyperparams)
+
+    raise NotImplementedError
