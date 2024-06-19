@@ -19,7 +19,7 @@ def reidentification_risk(train_data: torch.Tensor, syndata: torch.Tensor, reid_
     # Calculate the re-identification risk
     risk = np.mean(max_similarities > reid_threshold)
 
-    return {"risk": risk}
+    return {"reid risk": risk}
 
 def plot(max_similarities, threshold):
     sorted_similarities = np.sort(max_similarities)

@@ -36,7 +36,7 @@ def calc_coverage(nn_synthetic, real_data_embedded, threshold = 1):
     return coverage
 
 
-def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, reshape_method: str):
+def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, reshape_method: str="events"):
     if reshape_method == "sequences":
         train_data = flatten_into_sequences(train_data)
         syndata = flatten_into_sequences(syndata)
@@ -67,20 +67,3 @@ def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, 
         "normalized intraset distance": intra_set_distance_syn / intra_set_distance_real,
         "coverage": coverage
     }
-
-
-
-if __name__ == "__main__":
-    from src.data.data_processing import generate_random_data
-    n_neighbors = 5
-    n_components = 10
-
-    # Generate random test data
-    syndata = generate_random_data(10, 5, 20)
-    realdata = generate_random_data(10, 5, 20)
-
-    diversity_sequences = calculate_diversity_scores(realdata, syndata, n_components, n_neighbors, reshape_method="sequences")
-    diversity_events = calculate_diversity_scores(realdata, syndata, n_components, n_neighbors, reshape_method="events")
-
-    print(diversity_sequences)
-    print(diversity_events)

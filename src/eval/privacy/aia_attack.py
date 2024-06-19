@@ -5,15 +5,15 @@ from sklearn.metrics import f1_score
 
 # AIA stands for Attribute Inference Attack
 class AIA:
-    def __init__(self, known_indices: List[int], unknown_indices: List[int], aia_threshold: float = 0.1,k: int = 1):
+    def __init__(self, known_indices: List[int], unknown_indices: List[int], aia_threshold: float = 0.1, n_neighbors: int = 1):
         self.known_indices = known_indices
         self.unknown_indices = unknown_indices
-        self.k = k
+        self.n_neighbors = n_neighbors
         self.threshold = aia_threshold
 
     def find_knn(self, target_sequence: torch.Tensor, syndata: torch.Tensor) -> torch.Tensor:
         distances = torch.norm(syndata[:, :, self.known_indices] - target_sequence[:, self.known_indices].unsqueeze(0), dim=(1, 2))
-        neighbors_indices = torch.argsort(distances)[:self.k]
+        neighbors_indices = torch.argsort(distances)[:self.n_neighbors]
         return neighbors_indices
 
     def majority_rule_classifier(self, neighbors: torch.Tensor, unknown_index: int) -> torch.Tensor:
@@ -44,12 +44,8 @@ class AIA:
         weighted_f1_score = 0.0
         weighted_accuracy = 0.0
 
-        print(self.unknown_indices)
         for i in range(true_attributes.shape[2]):
             if is_binary(true_attributes[:, :, i]): # Binary attribute
-                print("is binary")
-                print(true_attributes[:,:,i])
-                print(inferred_attributes[:,:,i])
 
                 true_flat = true_attributes[:, :, i].flatten().cpu().numpy()
                 inferred_flat = inferred_attributes[:, :, i].flatten().cpu().numpy()
@@ -68,15 +64,15 @@ class AIA:
 
 def is_binary(tensor): return torch.all((tensor == 0) | (tensor == 1))
 
-def perform_aia(syndata: torch.Tensor, train_data: torch.Tensor, k=1, aia_threshold=0.1, num_disclosed_attributes:int=3):
+def perform_aia(syndata: torch.Tensor, train_data: torch.Tensor, n_neighbors=1, aia_threshold=0.1, num_disclosed_attributes:int=3):
     unknown_indices = torch.randperm(train_data.size(2))[:num_disclosed_attributes]
     known_indices = get_known_indices(unknown_indices, train_data.size(2))
 
-    attack = AIA(known_indices, unknown_indices, aia_threshold, k=1)
+    attack = AIA(known_indices, unknown_indices, aia_threshold, n_neighbors=1)
     risk = attack.calculate_risk(syndata, train_data)
 
     return {
-        "risk": risk
+        "attribute disclosure risk": risk.item()
     }
 
 def get_known_indices(unknown_indices:torch.Tensor, num_features):

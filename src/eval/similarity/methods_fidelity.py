@@ -6,10 +6,9 @@ from scipy.stats import ks_2samp, skew, kurtosis
 
 from src.eval.visualise import visualise_varcor_similarities, visualise_distributions
 
-
-def stats(test_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
+def stats(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     # Convert tensors to correct shape
-    test_data = test_data.numpy().reshape(-1, test_data.shape[2])
+    real_data = real_data.numpy().reshape(-1, real_data.shape[2])
     syndata = syndata.numpy().reshape(-1, syndata.shape[2])
 
     scores = {}
@@ -19,7 +18,7 @@ def stats(test_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     for method in [np.mean, np.std, np.median, np.var, skew, kurtosis]:
 
         # Calculate differences and average difference in real and synthetic variable statistics
-        differences = np.abs(method(test_data, axis=0) - method(syndata, axis=0))
+        differences = np.abs(method(real_data, axis=0) - method(syndata, axis=0))
         average_diff = np.mean(differences)
 
         scores.update({
@@ -34,7 +33,7 @@ def stats(test_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
 
     return scores
 
-def kolmogorov_smirnov(test_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
+def kolmogorov_smirnov(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     "Use kolmogorov smirnov to calculate distances between variable distributions"
 
     # Track ks-sample test statistics and p_values
@@ -42,9 +41,9 @@ def kolmogorov_smirnov(test_data: torch.Tensor, syndata: torch.Tensor, columns: 
     p_values = {}
 
     # Loop through variable distributions
-    num_features = test_data.shape[2]
+    num_features = real_data.shape[2]
     for feature_idx in range(num_features):
-        real_feature = test_data[:, :, feature_idx].flatten()
+        real_feature = real_data[:, :, feature_idx].flatten()
         synthetic_feature = syndata[:, :, feature_idx].flatten()
 
         # Calculate the Kolomgorov-Smirnov two sample test
@@ -62,13 +61,13 @@ def kolmogorov_smirnov(test_data: torch.Tensor, syndata: torch.Tensor, columns: 
         "p_values" : p_values
     }
 
-def avg_diff_correlations(test_data: torch.Tensor, syndata: torch.Tensor, graph_path):
+def avg_diff_correlations(real_data: torch.Tensor, syndata: torch.Tensor, graph_path: str):
     # Calculates the difference between correlation matrices of real and synthetic data 
     # (i.e. how do correlations between variable pair differ between real and synthetic data)
 
     # Flatten the sequences into tabular format: (Events, number of features)
-    num_features = test_data.size(2)
-    real_eventlog = test_data.numpy().reshape(-1, num_features)
+    num_features = real_data.size(2)
+    real_eventlog = real_data.numpy().reshape(-1, num_features)
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
     diff_matrix, frob_norm = similarity_correlation_matrix(real_eventlog, synthetic_eventlog)
 
@@ -78,12 +77,12 @@ def avg_diff_correlations(test_data: torch.Tensor, syndata: torch.Tensor, graph_
         "Magnitude of difference in variable correlations": frob_norm
     }
 
-def wasserstein_distance(test_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
+def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
     """
     Calculates the wasserstein distance between real and synthetic eventlogs
     """
-    num_features = test_data.shape[2]
-    real_eventlog = test_data.numpy().reshape(-1, num_features)
+    num_features = real_data.shape[2]
+    real_eventlog = real_data.numpy().reshape(-1, num_features)
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
 
     cost_matrix = ot.dist(real_eventlog, synthetic_eventlog)
