@@ -17,14 +17,14 @@ def select_data(dataset: str) -> Dataset:
 
     raise NotImplementedError
     
-def create_downstream_data(dataset: str, task: str, sequences: torch.Tensor, columns: List[str], name: str):
-    if dataset == "cf": return cf_downstream_data(task, sequences, columns, name)
+def create_downstream_data(dataset: str, task: str, sequences: torch.Tensor, columns: List[str]):
+    if dataset == "cf": return cf_downstream_data(task, sequences, columns)
 
     raise NotImplementedError
 
-def cf_downstream_data(task, sequences, columns, name):
-    if task == "classification": return create_cf_classification_data(sequences, columns, name)
-    if task == "regression": return create_cf_regression_data(sequences, columns, name)
+def cf_downstream_data(task, sequences, columns):
+    if task == "classification": return create_cf_classification_data(sequences, columns)
+    if task == "regression": return create_cf_regression_data(sequences, columns)
 
     raise NotImplementedError
     
