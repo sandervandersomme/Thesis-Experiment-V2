@@ -88,11 +88,16 @@ RWGAN_params = {
 }
     
 def add_shape_to_params(hyperparams: dict, shape: tuple):
-    hyperparams.update({
-        "num_sequences": shape[0],
-        "num_events": shape[1],
-        "num_features": shape[2],
-    })
+    if len(shape) == 2:
+        hyperparams.update({
+            "num_events": shape[0],
+            "num_features": shape[1],
+        })
+    if len(shape) == 3:
+        hyperparams.update({
+            "num_events": shape[1],
+            "num_features": shape[2],
+        })
     return hyperparams
 
 def load_default_params(model: str):
