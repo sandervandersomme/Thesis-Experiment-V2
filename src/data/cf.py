@@ -45,8 +45,8 @@ class CF(Dataset):
         return self.sequences[index]
 
 class DownstreamDataset(Dataset):
-    def __init__(self, sequences: torch.Tensor, targets: torch.Tensor, columns: List[str], name: str):
-        self.sequences, self.targets, self.columns, self.name = sequences, targets, columns, name
+    def __init__(self, sequences: torch.Tensor, targets: torch.Tensor, columns: List[str]):
+        self.sequences, self.targets, self.columns = sequences, targets, columns
 
     def __len__(self):
         return len(self.sequences)
@@ -57,5 +57,5 @@ class DownstreamDataset(Dataset):
 if __name__ == "__main__":
     cf = CF()
 
-    from src.data.data_processing import split_train_test
-    train_sequences, test_sequences = split_train_test(cf, 0.7)
+    from src.data.data_processing import split
+    train_sequences, test_sequences = split(cf, 0.7)
