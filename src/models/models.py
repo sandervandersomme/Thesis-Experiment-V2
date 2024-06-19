@@ -55,6 +55,6 @@ def load_gen_model(model: str, hyperparams) -> GenModel:
 
 def task_to_model(task: str):
     if task == "classification": return "classifier"
-    if task == "regressor": return "regressor"
+    if task == "regression": return "regressor"
 
     raise NotImplementedError()
