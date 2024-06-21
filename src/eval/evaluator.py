@@ -24,16 +24,15 @@ class Evaluator:
         self.output_path = output_dir
         self.param_dir = param_dir
 
-    def evaluate(self, model: GenModel, syndata: torch.Tensor, dataset_name: str, model_name: str, model_id: int, syndata_id: int):
+    def evaluate(self, model: GenModel, syndata: torch.Tensor, model_name: str, model_id: int, syndata_id: int):
         self.syndata = syndata
         self.model = model
         self.model_info = {
-            "dataset_name": dataset_name,
             "model_name": model_name,
             "model_id": model_id,
             "syndata_id": syndata_id
         }
-        self.filename = f"results_{dataset_name}-{model_name}-{model_id}-{syndata_id}"
+        self.filename = f"results_{self.args.dataset}-{model_name}-{model_id}-{syndata_id}"
         self.model_scores = {}
 
         if "all" in self.criteria:
@@ -114,7 +113,6 @@ class Evaluator:
     def update_results_df(self):
         filtered_results = {k: v for k, v in self.model_scores.items() if not isinstance(v, (dict, list, tuple, np.ndarray))}
         df = pd.DataFrame(filtered_results, index=[0])
-        df['dataset_name'] = self.model_info['dataset_name']
         df['model_name'] = self.model_info['model_name']
         df['model_id'] = self.model_info['model_id']
         df['syndata_id'] = self.model_info['syndata_id']
