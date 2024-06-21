@@ -71,7 +71,7 @@ def avg_diff_correlations(real_data: torch.Tensor, syndata: torch.Tensor, graph_
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
     diff_matrix, frob_norm = similarity_correlation_matrix(real_eventlog, synthetic_eventlog)
 
-    visualise_varcor_similarities(diff_matrix, f"{graph_path}sim_varcors.png")
+    # visualise_varcor_similarities(diff_matrix, f"{graph_path}sim_varcors.png")
 
     return {
         "Magnitude of difference in variable correlations": frob_norm
@@ -88,7 +88,7 @@ def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns
     cost_matrix = ot.dist(real_eventlog, synthetic_eventlog)
     distance = ot.emd2([], [], cost_matrix)
 
-    visualise_distributions(real_eventlog, synthetic_eventlog, columns, f"{graph_path}distributions/")
+    # visualise_distributions(real_eventlog, synthetic_eventlog, columns, f"{graph_path}distributions/")
 
     return {"Wasserstein distance between real and synthetic eventlogs": distance}
 
