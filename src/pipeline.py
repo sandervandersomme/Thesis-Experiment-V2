@@ -127,7 +127,7 @@ class Pipeline:
                     if os.path.exists(dataset_path):
                         syndata = torch.load(dataset_path)
                         print(f"Evaluating synthetic dataset {dataset_name}")
-                        evaluator.evaluate(model, syndata, dataset_name, model_type, model_id, syndata_id)
+                        evaluator.evaluate(model, syndata, model_type, model_id, syndata_id)
         evaluator.save_results_to_csv()
         evaluator.save_averages()
 
