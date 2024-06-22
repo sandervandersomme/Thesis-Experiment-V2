@@ -9,3 +9,7 @@ PATH_EXP1_TUNED = "outputs/experiments/1/tuned"
 PATH_EXP1_UNTUNED = "outputs/experiments/1/untuned"
 
 PATH_SYNDATA = "outputs/syndata/"
+
+
+PATH_CF_165 = "datasets/processed/cf165.csv"
+PATH_CF_184 = "datasets/processed/cf184.csv"
