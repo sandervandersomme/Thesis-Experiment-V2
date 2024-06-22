@@ -6,8 +6,8 @@ from torch.utils.data import Dataset
 from src.models.models import GenModel, task_to_model
 from src.training.hyperparameters import load_default_params, load_optimal_params, add_shape_to_params
 from src.utilities.utils import convert_numpy_types
-from src.eval.similarity.methods_fidelity import stats, wasserstein_distance, avg_diff_correlations
-from src.eval.similarity.methods_temporal_fidelity import avg_diff_ts_distributions, avg_diff_inter_ts_distances, avg_similarity_longshortterm_correlations
+from src.eval.similarity.methods_fidelity import avg_diff_statistics, wasserstein_distance, similarity_of_correlations
+from src.eval.similarity.methods_temporal_fidelity import similarity_event_distributions, similarity_temporal_distances, similarity_temporal_dependencies
 from src.eval.diversity.methods_diversity import calculate_diversity_scores
 from src.eval.utility.methods_utility import run_downstream_task
 from src.eval.privacy.methods_privacy import calculate_direct_matches, perform_aia, mia_blackbox_attack, mia_whitebox_attack, reidentification_risk
@@ -66,17 +66,17 @@ class Evaluator:
     def evaluate_fidelity(self):
         print("Evaluating fidelity..")
         self.model_scores.update(
-            **stats(self.real_data.sequences, self.syndata, self.real_data.columns), 
-            **avg_diff_correlations(self.real_data.sequences, self.syndata, self.output_path), 
+            **avg_diff_statistics(self.real_data.sequences, self.syndata, self.real_data.columns), 
+            **similarity_of_correlations(self.real_data.sequences, self.syndata, self.output_path), 
             **wasserstein_distance(self.real_data.sequences, self.syndata, self.real_data.columns, self.output_path))
 
     def evaluate_temporal_fidelity(self):
         print("Evaluating temporal fidelity..")
 
         self.model_scores.update(
-            **avg_diff_ts_distributions(self.real_data.sequences, self.syndata, self.output_path), 
-            **avg_diff_inter_ts_distances(self.real_data.sequences, self.syndata, self.output_path), 
-            **avg_similarity_longshortterm_correlations(self.real_data.sequences, self.syndata, self.real_data.columns, self.output_path))
+            **similarity_event_distributions(self.real_data.sequences, self.syndata, self.output_path), 
+            **similarity_temporal_distances(self.real_data.sequences, self.syndata, self.output_path), 
+            **similarity_temporal_dependencies(self.real_data.sequences, self.syndata, self.real_data.columns, self.output_path))
 
     def evaluate_utility(self):
         print("Evaluating utility..")

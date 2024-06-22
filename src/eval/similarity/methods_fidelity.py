@@ -6,7 +6,7 @@ from scipy.stats import ks_2samp, skew, kurtosis
 
 from src.eval.visualise import visualise_varcor_similarities, visualise_distributions
 
-def stats(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
+def avg_diff_statistics(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     # Convert tensors to correct shape
     real_data = real_data.numpy().reshape(-1, real_data.shape[2])
     syndata = syndata.numpy().reshape(-1, syndata.shape[2])
@@ -61,7 +61,7 @@ def kolmogorov_smirnov(real_data: torch.Tensor, syndata: torch.Tensor, columns: 
         "p_values" : p_values
     }
 
-def avg_diff_correlations(real_data: torch.Tensor, syndata: torch.Tensor, graph_path: str):
+def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor, graph_path: str):
     # Calculates the difference between correlation matrices of real and synthetic data 
     # (i.e. how do correlations between variable pair differ between real and synthetic data)
 
