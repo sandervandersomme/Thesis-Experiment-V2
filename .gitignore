@@ -2,6 +2,9 @@
 datasets/
 outputs/
 
+# Other
+.DS_Store
+
 # Logging
 runs/
 
