@@ -1,5 +1,5 @@
 import torch
-from src.utilities.utils import set_device
+from src.utils import set_device
 
 from src.paths import TEST_PATH_MODEL, PATH_MODEL
 

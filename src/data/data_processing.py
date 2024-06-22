@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset, random_split
-from src.utilities.utils import set_device
+from src.utils import set_device
 
 def flatten_into_sequences(data: torch.Tensor):
     """

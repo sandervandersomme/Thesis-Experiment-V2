@@ -1,6 +1,6 @@
 import torch
 from sklearn.metrics import f1_score
-from src.utilities.utils import set_device
+from src.utils import set_device
 
 def calculate_direct_matches(syndata: torch.Tensor, train_data: torch.Tensor, matching_threshold: float):
     device = set_device()

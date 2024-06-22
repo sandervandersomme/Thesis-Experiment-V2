@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from src.utilities.utils import set_device
+from src.utils import set_device
 
 from src.paths import PATH_MODEL, TEST_PATH_MODEL
 
