@@ -5,7 +5,7 @@ import numpy as np
 from torch.utils.data import Dataset
 from src.models.models import GenModel, task_to_model
 from src.training.hyperparameters import load_default_params, load_optimal_params, add_shape_to_params
-from src.utilities.utils import convert_numpy_types
+from src.utils import convert_numpy_types
 from src.eval.similarity.methods_fidelity import avg_diff_statistics, wasserstein_distance, similarity_of_correlations
 from src.eval.similarity.methods_temporal_fidelity import similarity_event_distributions, similarity_temporal_distances, similarity_temporal_dependencies
 from src.eval.diversity.methods_diversity import calculate_diversity_scores
