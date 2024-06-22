@@ -4,7 +4,8 @@ from src.data.data_processing import split
 from src.models.models import load_gen_model, train_gen_model, task_to_model
 from src.training.hyperparameters import load_default_params, load_optimal_params, add_shape_to_params
 from src.training.tuning import GenTuner, DownstreamTuner
-from src.eval.evaluator import Evaluator
+from src.eval.newevaluator import Evaluator
+from src.eval.collector import Collector
 import torch
 import os
 import pickle
@@ -116,20 +117,23 @@ class Pipeline:
         with open(os.path.join(self.MODEL_DIR, f"{self.args.dataset}-{model_type}-{model_id}" + '.pkl'), 'rb') as f:
             return pickle.load(f)
 
+    # def evaluate_models(self):
+    #     evaluator = Evaluator(self.args.criteria, self.dataset, self.train_data.indices, self.test_data.indices, self.EVAL_DIR, self.HYPERPARAM_DIR, self.args)
+    #     for model_type in self.args.models:
+    #         for model_id in range(self.args.num_instances):
+    #             model = self.load_model(model_type, model_id)
+    #             for syndata_id in range(self.args.num_syn_datasets):
+    #                 dataset_name = f"{self.args.dataset}-{model_type}-{model_id}-{syndata_id}"
+    #                 dataset_path = os.path.join(self.SYNDATA_DIR, dataset_name + '.pt')
+    #                 if os.path.exists(dataset_path):
+    #                     syndata = torch.load(dataset_path)
+    #                     print(f"Evaluating synthetic dataset {dataset_name}")
+    #                     evaluator.evaluate(model, syndata, model_type, model_id, syndata_id)
+    #     evaluator.save_results_to_csv()
+    #     evaluator.save_averages()
+
     def evaluate_models(self):
-        evaluator = Evaluator(self.args.criteria, self.dataset, self.train_data.indices, self.test_data.indices, self.EVAL_DIR, self.HYPERPARAM_DIR, self.args)
-        for model_type in self.args.models:
-            for model_id in range(self.args.num_instances):
-                model = self.load_model(model_type, model_id)
-                for syndata_id in range(self.args.num_syn_datasets):
-                    dataset_name = f"{self.args.dataset}-{model_type}-{model_id}-{syndata_id}"
-                    dataset_path = os.path.join(self.SYNDATA_DIR, dataset_name + '.pt')
-                    if os.path.exists(dataset_path):
-                        syndata = torch.load(dataset_path)
-                        print(f"Evaluating synthetic dataset {dataset_name}")
-                        evaluator.evaluate(model, syndata, model_type, model_id, syndata_id)
-        evaluator.save_results_to_csv()
-        evaluator.save_averages()
+        collector = Collector(args, self.EVAL_DIR)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
