@@ -1,7 +1,12 @@
 from typing import List
 
+from src.eval.diversity.diversity_evaluator import DiversityEvaluator
+from src.eval.privacy.privacy_evaluator import PrivacyEvaluator
+from src.eval.similarity.fidelity_evaluator import FidelityEvaluator
+from src.eval.similarity.temporal_fidelity_evaluator import TemporalFidelityEvaluator
+from src.eval.utility.utility_evaluator import UtilityEvaluator
 from src.utils import get_filenames_of_models, get_filenames_of_syndatasets, load_model, load_dataset
-from src.eval.newevaluator import Evaluator, FidelityEvaluator, PrivacyEvaluator, TemporalFidelityEvaluator, DiversityEvaluator, UtilityEvaluator
+from src.eval.newevaluator import Evaluator
 
 class Collector():
     def __init__(self, models, criteria, eval_dir, eval_args, num_instances, num_datasets) -> None:
