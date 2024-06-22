@@ -2,20 +2,20 @@ from typing import List
 
 from src.eval.diversity.diversity_evaluator import DiversityEvaluator
 from src.eval.privacy.privacy_evaluator import PrivacyEvaluator
-from src.eval.similarity.fidelity_evaluator import FidelityEvaluator
-from src.eval.similarity.temporal_fidelity_evaluator import TemporalFidelityEvaluator
+from src.eval.fidelity.fidelity_evaluator import FidelityEvaluator
+from src.eval.fidelity.temporal_fidelity_evaluator import TemporalFidelityEvaluator
 from src.eval.utility.utility_evaluator import UtilityEvaluator
-from src.utils import get_filenames_of_models, get_filenames_of_syndatasets, load_model, load_dataset
+from src.utils import get_filenames_of_models, get_filenames_of_syndatasets, load_model
 from src.eval.newevaluator import Evaluator
 
 class Collector():
-    def __init__(self, models, criteria, eval_dir, eval_args, num_instances, num_datasets) -> None:
-        self.models = models
-        self.criteria = criteria
+    def __init__(self, args, eval_dir) -> None:
+        self.models = args.models
+        self.criteria = args.criteria
         self.eval_dir = eval_dir
-        self.eval_args = eval_args
-        self.num_instances = num_instances
-        self.num_datasets = num_datasets
+        self.eval_args = args
+        self.num_instances = args.num_instances
+        self.num_datasets = args.num_datasets
 
         self.results_full = None
         self.results_average = None
