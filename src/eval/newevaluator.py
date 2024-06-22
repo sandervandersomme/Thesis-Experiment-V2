@@ -10,6 +10,8 @@ class Evaluator():
         # Collect results
         self.results = None
         self.average_results = None
+        self.num_datasets = 0
+
 
     def evaluate_dataset(self, dataset: torch.Tensor, dataset_id: int, model: GenModel, model_id: int):
         pass
