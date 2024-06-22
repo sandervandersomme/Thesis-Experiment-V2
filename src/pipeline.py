@@ -24,7 +24,7 @@ class Pipeline:
         self.EVAL_DIR = f"{self.output_path}eval/"
 
     def setup_folders(self):
-        self.output_path = self.args.output_folder
+        self.output_path = f"outputs/{self.args.output_folder}/"
         os.makedirs(f"{self.output_path}syndata", exist_ok=True)
         os.makedirs(f"{self.output_path}hyperparams/trials/", exist_ok=True)
         os.makedirs(f"{self.output_path}eval", exist_ok=True)
@@ -142,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument("--flag_training", action="store_true")
     parser.add_argument("--flag_generation", action="store_true")
     parser.add_argument("--flag_evaluation", action="store_true")
-    parser.add_argument("--output_folder", default="outputs/exp1/")
+    parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--split_size", default=0.7)
     parser.add_argument("--val_split_size", default=0.15)
     parser.add_argument("--epochs", default=50, type=int)
