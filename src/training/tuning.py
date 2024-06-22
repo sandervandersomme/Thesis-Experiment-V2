@@ -71,7 +71,7 @@ class DownstreamTuner(Tuner):
             val_data = Subset(self.dataset, val_idx)
 
             # Load and train model
-            model = load_downstream_model(model_class, **hyperparams)
+            model = load_downstream_model(model_class, hyperparams)
             fold_val_loss = train_downstream_model(model, train_data, epochs, val_data)
             val_losses.append(fold_val_loss)
 
