@@ -3,65 +3,36 @@ import ot
 import numpy as np
 from typing import List
 from scipy.stats import ks_2samp, skew, kurtosis
+import pandas as pd
 
-from src.eval.visualise import visualise_varcor_similarities, visualise_distributions
+# from src.eval.visualise import visualise_varcor_similarities, visualise_distributions
 
-def avg_diff_statistics(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
+def similarity_of_statistics(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     # Convert tensors to correct shape
     real_data = real_data.numpy().reshape(-1, real_data.shape[2])
     syndata = syndata.numpy().reshape(-1, syndata.shape[2])
 
-    scores = {}
-    var_diffs = {}
+    metrics = ["mean", "std", "median", "var", "kurtosis"] # Removed skewness
+    methods = [np.mean, np.std, np.median, np.var, kurtosis]
+    
+    # Initialize a DataFrame to store similarities
+    similarity_matrix = pd.DataFrame(index=columns, columns=metrics)
     
     # Loop through statistic methods
-    for method in [np.mean, np.std, np.median, np.var, skew, kurtosis]:
+    for method, metric in zip(methods, metrics):
 
         # Calculate differences and average difference in real and synthetic variable statistics
-        differences = np.abs(method(real_data, axis=0) - method(syndata, axis=0))
-        average_diff = np.mean(differences)
+        real_statistic = method(real_data, axis=0)
+        syn_statistic = method(syndata, axis=0)
+        similarities = 1 - np.abs((real_statistic - syn_statistic) / np.maximum(np.abs(real_statistic), np.abs(syn_statistic)))
+        
+        # Update the DataFrame
+        similarity_matrix[metric] = similarities
 
-        scores.update({
-            f"Average {method.__name__}": average_diff
-        })
-            
-        var_diffs[method.__name__] = dict(zip(columns, differences))
+    avg_matrix = similarity_matrix.mean()
+    return similarity_matrix, avg_matrix
 
-    # scores.update({
-    #     "differences per variable": var_diffs
-    # })
-
-    return scores
-
-def kolmogorov_smirnov(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
-    "Use kolmogorov smirnov to calculate distances between variable distributions"
-
-    # Track ks-sample test statistics and p_values
-    statistics = {}
-    p_values = {}
-
-    # Loop through variable distributions
-    num_features = real_data.shape[2]
-    for feature_idx in range(num_features):
-        real_feature = real_data[:, :, feature_idx].flatten()
-        synthetic_feature = syndata[:, :, feature_idx].flatten()
-
-        # Calculate the Kolomgorov-Smirnov two sample test
-        distance, p_value = ks_2samp(real_feature, synthetic_feature)
-
-        # Track results
-        statistics[columns[feature_idx]] = distance
-        p_values[columns[feature_idx]] = p_value
-
-    average = np.mean(list(statistics.values()))
-
-    return {
-        "Average statistic": average,
-        "statistics" : statistics,
-        "p_values" : p_values
-    }
-
-def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor, graph_path: str):
+def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor):
     # Calculates the difference between correlation matrices of real and synthetic data 
     # (i.e. how do correlations between variable pair differ between real and synthetic data)
 
@@ -69,15 +40,11 @@ def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor, g
     num_features = real_data.size(2)
     real_eventlog = real_data.numpy().reshape(-1, num_features)
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
-    diff_matrix, frob_norm = similarity_correlation_matrix(real_eventlog, synthetic_eventlog)
+    similarity_matrix, similarity_score = similarity_correlation_matrix(real_eventlog, synthetic_eventlog)
 
-    # visualise_varcor_similarities(diff_matrix, f"{graph_path}sim_varcors.png")
+    return similarity_score, similarity_matrix
 
-    return {
-        "Magnitude of difference in variable correlations": frob_norm
-    }
-
-def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns, graph_path: str):
+def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns):
     """
     Calculates the wasserstein distance between real and synthetic eventlogs
     """
@@ -88,9 +55,7 @@ def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns
     cost_matrix = ot.dist(real_eventlog, synthetic_eventlog)
     distance = ot.emd2([], [], cost_matrix)
 
-    # visualise_distributions(real_eventlog, synthetic_eventlog, columns, f"{graph_path}distributions/")
-
-    return {"Wasserstein distance between real and synthetic eventlogs": distance}
+    return distance
 
 def similarity_correlation_matrix(real_events: torch.Tensor, synthetic_events: torch.Tensor):
     # Calculate the differences between real and synthetic correlation matrices
@@ -111,3 +76,13 @@ def similarity_correlation_matrix(real_events: torch.Tensor, synthetic_events: t
     frobenius_norm = np.linalg.norm(similarity_matrix, 'fro')
 
     return similarity_matrix, frobenius_norm
+
+if __name__ == "__main__":
+    shape = (200, 5, 20)
+    realdata = torch.rand(shape)
+    syn = torch.rand(shape)
+    columns = [str(x) for x in range(realdata.shape[2])]
+
+    matrix, avgs = similarity_of_statistics(realdata, syn, columns)
+    print(avgs)
+    print(**dict(avgs))
