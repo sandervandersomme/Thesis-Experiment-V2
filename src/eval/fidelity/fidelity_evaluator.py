@@ -1,8 +1,7 @@
 from src.eval.newevaluator import Evaluator
 from src.models.gen_model import GenModel
-
-
 import torch
+
 
 
 class FidelityEvaluator(Evaluator):
