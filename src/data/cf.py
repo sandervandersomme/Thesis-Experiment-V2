@@ -5,8 +5,10 @@ import torch
 import pandas as pd
 import numpy as np
 
+from src.paths import PATH_CF_165, PATH_CF_184
+
 class CF(Dataset):
-    PATH_SEQUENCES = "datasets/processed/cf_full.csv"
+    PATH_SEQUENCES = PATH_CF_184
     NAME = "cf"
 
     def __init__(self):
@@ -15,6 +17,7 @@ class CF(Dataset):
 
     def load_and_process_data(self):
         sequences = pd.read_csv(self.PATH_SEQUENCES)
+        print(sequences.shape)
         columns = [col for col in sequences.columns if col not in ["PATIENTNR", "DATE", "START_KAFTRIO"]]
         sequences, boolean_indices = self.scale_and_reshape(sequences)
         return sequences, boolean_indices, columns
@@ -35,6 +38,7 @@ class CF(Dataset):
         boolean_indices = [sequences.columns.get_loc(col) for col in boolean_columns]
 
         sequences = CF.scale_data(sequences)
+        print(sequences.shape)
         sequences = sequences.reshape(num_sequences, num_events, sequences.shape[1])
         return torch.Tensor(sequences), boolean_indices
     
