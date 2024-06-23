@@ -12,8 +12,8 @@ def similarity_of_statistics(real_data: torch.Tensor, syndata: torch.Tensor, col
     real_data = real_data.numpy().reshape(-1, real_data.shape[2])
     syndata = syndata.numpy().reshape(-1, syndata.shape[2])
 
-    metrics = ["mean", "std", "median", "var", "kurtosis"] # Removed skewness
-    methods = [np.mean, np.std, np.median, np.var, kurtosis]
+    metrics = ["mean", "std", "median", "var"] # Removed skewness and kurtosis
+    methods = [np.mean, np.std, np.median, np.var]
     
     # Initialize a DataFrame to store similarities
     similarity_matrix = pd.DataFrame(index=columns, columns=metrics)
@@ -29,8 +29,8 @@ def similarity_of_statistics(real_data: torch.Tensor, syndata: torch.Tensor, col
         # Update the DataFrame
         similarity_matrix[metric] = similarities
 
-    avg_matrix = similarity_matrix.mean()
-    return similarity_matrix, avg_matrix
+    avgs_statistics = similarity_matrix.mean()
+    return avgs_statistics, similarity_matrix
 
 def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor):
     # Calculates the difference between correlation matrices of real and synthetic data 
@@ -53,7 +53,7 @@ def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns
     synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
 
     cost_matrix = ot.dist(real_eventlog, synthetic_eventlog)
-    distance = ot.emd2([], [], cost_matrix)
+    distance = ot.emd2([], [], cost_matrix, numItermax=200000)
 
     return distance
 
@@ -74,8 +74,9 @@ def similarity_correlation_matrix(real_events: torch.Tensor, synthetic_events: t
 
     # The frobenius norm calculates the size or magnitude of a matrix (in this case, the magnitude of the difference matrix)
     frobenius_norm = np.linalg.norm(similarity_matrix, 'fro')
+    normalised_frobenius_norm = frobenius_norm / similarity_matrix.shape[0]
 
-    return similarity_matrix, frobenius_norm
+    return similarity_matrix, normalised_frobenius_norm
 
 if __name__ == "__main__":
     shape = (200, 5, 20)
