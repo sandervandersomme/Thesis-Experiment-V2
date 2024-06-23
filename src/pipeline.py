@@ -42,35 +42,36 @@ class Pipeline:
         self.train_shape = (len(self.train_data), *self.train_data[0].size())
         self.test_shape = (len(self.test_data), *self.test_data[0].size())
 
-
     def split_data(self):
         return split(self.real_data, self.args.split_size, self.args.seed)
 
     def execute(self):
         if self.args.flag_gen_tuning:
+            print("Start tuning generative models")
             self.tune_gen_models()
 
         if self.args.flag_down_tuning:
+            print("Start tuning downstream model")
             self.tune_downstream_models()
 
         if self.args.flag_training:
+            print("Start training models..")
             self.train_models()
 
         if self.args.flag_generation:
+            print("Start generating synthetic datasets..")
             self.generate_data()
 
         if self.args.flag_evaluation:
+            print("Start evaluation..")
             self.evaluate_models()
 
     def tune_gen_models(self):
-        print("Start tuning generative models")
         for model in self.args.models:
             tuner = GenTuner(self.train_data, self.args.dataset, self.args.seed, self.output_path)
             tuner.tune(model, self.args.trials, self.args.folds, self.args.epochs)
 
     def tune_downstream_models(self):
-        print("Start tuning downstream model")
-
         train_sequences = self.real_data[self.train_data.indices]
         for task in self.args.tasks:
             train_data_downstream = create_downstream_data(self.args.dataset, task, train_sequences, self.real_data.columns)
@@ -111,7 +112,7 @@ class Pipeline:
     def generate_datasets(self, model, model_type, model_id):
         for syndata_id in range(self.args.num_syn_datasets):
             syndata = model.generate_data(self.args.num_syn_samples)
-            self.save_syndata(syndata, f"{self.args.dataset}-{model_type}-{model_id}-{syndata_id}")
+            self.save_syndata(syndata, f"{model_type}-{model_id}-{syndata_id}")
 
     def save_model(self, model, model_name):
         with open(os.path.join(self.MODEL_DIR, model_name + '.pkl'), 'wb') as f:
@@ -122,10 +123,13 @@ class Pipeline:
             return pickle.load(f)
 
     def evaluate_models(self):
-        collector = Collector(self.args.criteria, self.args.models, args.num_instances, args.num_syn_datasets, self.args, self.EVAL_DIR)
+        self.args.real_data = self.real_data
+        self.args.train_data = self.train_data
+        self.args.test_data = self.test_data
+        self.args.columns = self.real_data.columns
+
+        collector = Collector(self.args.criteria, self.args.models, args.num_instances, args.num_syn_datasets, self.args, self.output_path)
         collector.collect_results()
-
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

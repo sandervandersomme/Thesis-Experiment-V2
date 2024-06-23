@@ -1,102 +1,62 @@
 from typing import List
-from torch.utils.data import Dataset
-import torch
-
-from src.eval.diversity.diversity_evaluator import DiversityEvaluator
-from src.eval.privacy.privacy_evaluator import PrivacyEvaluator
-from src.eval.fidelity.fidelity_evaluator import FidelityEvaluator
-from src.eval.fidelity.temporal_fidelity_evaluator import TemporalFidelityEvaluator
-from src.eval.utility.utility_evaluator import UtilityEvaluator
 from src.utils import get_filenames_of_models, get_filenames_of_syndatasets, load_model
-from src.eval.newevaluator import Evaluator
+
+# Import evaluators
+from src.eval.evaluators.evaluator import Evaluator
+from src.eval.evaluators.fidelity_evaluator import FidelityEvaluator
+from src.eval.evaluators.temporal_fidelity_evaluator import TemporalFidelityEvaluator
+from src.eval.evaluators.diversity_evaluator import DiversityEvaluator
+from src.eval.evaluators.utility_evaluator import UtilityEvaluator
+from src.eval.evaluators.privacy_evaluator import PrivacyEvaluator
 
 class Collector():
-    def __init__(self, real_data: Dataset, train_indices: torch.Tensor, test_indices: torch.Tensor, args, eval_dir: str) -> None:
-        self.real_data = real_data
-        self.train_indices = train_indices
-        self.test_indices = test_indices
+    def __init__(self, criteria: List[str], models: List[str], num_instances: int, num_datasets: int, args, output_dir: str) -> None:
+        self.criteria = criteria
+        self.models = models
+        self.num_instances = num_instances
+        self.num_datasets = num_datasets
 
-        self.eval_dir = eval_dir
+        self.output_dir = output_dir
         self.args = args
-        self.args
 
         self.results_full = None
         self.results_average = None
 
     def collect_results(self):
         for model_type in self.args.models:
-            self.model_type = model_type
-            self.filenames_datasets = get_filenames_of_syndatasets(model_type, self.args.num_instances, self.args.num_syn_datasets)
-            self.filenames_models = get_filenames_of_models(model_type, self.args.num_instances)
-            self.evaluate_criteria()
+            model_files = get_filenames_of_models(model_type, self.num_instances)
 
-    def _evaluate_fidelity(self):
-        # Create evaluator
-        evaluator = FidelityEvaluator(self.args, self.eval_dir)
-        results, average_results = self._evaluate(evaluator)
-        # Add results
-        raise NotImplementedError
+            self.collect_model_results(model_type, model_files)
 
-    def _evaluate_temporal_fidelity(self):
-        raise NotImplementedError
+    def collect_model_results(self, model: str, model_files: List[str]):
+        print(f"Start evaluating model {model}..")
+        # Create new evaluators for model
+        self.evaluators = create_evaluators(self.criteria, self.args, self.output_dir)
 
-    def _evaluate_diversity(self):
-        raise NotImplementedError
-
-    def _evaluate_utility(self):
-        raise NotImplementedError
-
-    def _evaluate_privacy(self):
-        raise NotImplementedError
-
-    def evaluate_criteria(self):
-        for criterion in self.args.criteria:
-            if criterion == "all":
-                self._evaluate_fidelity()
-                self._evaluate_temporal_fidelity()
-                self._evaluate_diversity()
-                self._evaluate_utility()
-                self._evaluate_privacy()
-            else: 
-                if criterion == "fidelity":
-                    self._evaluate_fidelity()
-                if criterion == "time":
-                    self._evaluate_temporal_fidelity()
-                if criterion == "diversity":
-                    self._evaluate_diversity()
-                if criterion == "utility":
-                    self._evaluate_utility()
-                if criterion == "time":
-                    self._evaluate_privacy()
-
-    def _evaluate(self, evaluator: Evaluator):
-        # Loop through models
-        for model_id, model_filename in enumerate(self.filenames_models):
-            # Load model
-            model = load_model(self.eval_dir, model_filename)
-
-            # Loop through data
-            for syndata_id, syndata_filename in enumerate(self.filenames_datasets):
-                # Load data
-                syndata = load_model(self.eval_dir, syndata_filename)
-                
-                # Evaluate data
-                evaluator.evaluate_dataset(syndata, syndata_id, model, model_id, self.real_data, self.train_indices, self.test_indices)
-
-        # Calculate averages
-        # Visualise results
-        # Return results, average results
+        # Get files of datasets
+        filenames_datasets = get_filenames_of_syndatasets(model, self.num_instances, self.num_datasets)
+        
+        # Use evaluators for evaluation of the datasets
+        for evaluator in self.evaluators:
+            evaluator.evaluate(filenames_datasets)
 
 
-
-if __name__ == "__main__":
-    dir = "outputs/exp1/models/"
-    models = ["rgan", "timegan", "rwgan"]
-    criteria = ["all"]
-    args = {}
-    num_instances = 3
-    num_datasets = 3
-
-    collector = Collector(models, criteria, dir, args, num_instances, num_datasets)
-    collector.collect_results()
-
+def create_evaluators(criteria: List[str], args, output_dir) -> List[Evaluator]:
+    if criteria == "all":
+        return [
+            FidelityEvaluator(args, output_dir)
+        ]
+    else: 
+        for criterion in criteria:
+            evaluators = []
+            if criterion == "fidelity":
+                evaluators.append(FidelityEvaluator(args, output_dir))
+            if criterion == "temporal":
+                raise NotImplementedError
+            if criterion == "diversity":
+                raise NotImplementedError
+            if criterion == "utility":
+                raise NotImplementedError
+            if criterion == "privacy":
+                raise NotImplementedError
+    return evaluators
