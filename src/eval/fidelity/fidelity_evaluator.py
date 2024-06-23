@@ -21,9 +21,11 @@ class FidelityEvaluator(Evaluator):
         self.results_df = pd.DataFrame()
 
     def evaluate_dataset(self, syndata: torch.Tensor, dataset_id: int, model: GenModel, model_id: int):
-        sim_matrix_stats, stat_sim_scores = similarity_of_statistics(self.args.real_data, syndata, self.args.columns), 
-        correlations, similarity_score = similarity_of_correlations(self.args.real_data, syndata), 
-        w_distance = wasserstein_distance(self.args.real_data, self.syndata, self.args.columns)
+        print("Evaluating fidelity..")
+
+        sim_matrix_stats, stat_sim_scores = similarity_of_statistics(self.eval_args.real_data, syndata, self.eval_args.columns), 
+        correlations, similarity_score = similarity_of_correlations(self.eval_args.real_data, syndata), 
+        w_distance = wasserstein_distance(self.eval_args.real_data, self.syndata, self.eval_args.columns)
 
         self.total_sim_matrix_stats = sim_matrix_stats if self.total_sim_matrix_stats is None else self.total_sim_matrix_stats + sim_matrix_stats
         self.total_stats_sim_scores = stat_sim_scores if self.total_stats_sim_scores is None else self.total_stats_sim_scores + stat_sim_scores
