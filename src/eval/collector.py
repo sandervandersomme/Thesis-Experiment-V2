@@ -1,4 +1,5 @@
 from typing import List
+import os
 from src.utils import get_filenames_of_models, get_filenames_of_syndatasets, load_model
 
 # Import evaluators
@@ -8,6 +9,8 @@ from src.eval.evaluators.temporal_fidelity_evaluator import TemporalFidelityEval
 from src.eval.evaluators.diversity_evaluator import DiversityEvaluator
 from src.eval.evaluators.utility_evaluator import UtilityEvaluator
 from src.eval.evaluators.privacy_evaluator import PrivacyEvaluator
+
+import pandas as pd
 
 class Collector():
     def __init__(self, criteria: List[str], models: List[str], num_instances: int, num_datasets: int, args, output_dir: str) -> None:
@@ -19,14 +22,17 @@ class Collector():
         self.output_dir = output_dir
         self.args = args
 
-        self.results_full = None
-        self.results_average = None
+        self.results_full = pd.DataFrame()
+        self.results_average = pd.DataFrame()
 
     def collect_results(self):
         for model_type in self.args.models:
+            self.args.model_type = model_type
             model_files = get_filenames_of_models(model_type, self.num_instances)
 
             self.collect_model_results(model_type, model_files)
+        # Save results to files
+        self.save_results()
 
     def collect_model_results(self, model: str, model_files: List[str]):
         print(f"Start evaluating model {model}..")
@@ -38,8 +44,44 @@ class Collector():
         
         # Use evaluators for evaluation of the datasets
         for evaluator in self.evaluators:
-            evaluator.evaluate(filenames_datasets)
+            avgs_scores, full_scores = evaluator.evaluate(filenames_datasets)
+            
+            # Add average scores to the results_average dataframe
+            avgs_scores['Model'] = model  # Add model information as a column
+            self.results_average = pd.concat([self.results_average, avgs_scores], axis=0)
 
+            # Add full scores to the results_full dataframe
+            full_scores_df = pd.DataFrame(full_scores)
+            full_scores_df['Model'] = model
+            self.results_full = pd.concat([self.results_full, full_scores_df], axis=0)
+        
+    def save_results(self):
+        # Ensure the output directory exists
+        os.makedirs(self.output_dir, exist_ok=True)
+        
+        # Save the average results
+        avg_results_path_csv = os.path.join(self.output_dir, 'average_results.csv')
+        avg_results_path_latex = os.path.join(self.output_dir, 'average_results.tex')
+        avg_results_path_md = os.path.join(self.output_dir, 'average_results.md')
+        self.results_average.to_csv(avg_results_path_csv, index=False)
+        self.results_average.to_latex(avg_results_path_latex, index=False)
+        self.save_markdown(self.results_average, avg_results_path_md)
+        
+        # Save the full results
+        full_results_path_csv = os.path.join(self.output_dir, 'full_results.csv')
+        full_results_path_latex = os.path.join(self.output_dir, 'full_results.tex')
+        full_results_path_md = os.path.join(self.output_dir, 'full_results.md')
+        self.results_full.to_csv(full_results_path_csv, index=False)
+        self.results_full.to_latex(full_results_path_latex, index=False)
+        self.save_markdown(self.results_full, full_results_path_md)
+
+    def save_markdown(self, df: pd.DataFrame, path: str):
+        with open(path, 'w') as f:
+            f.write(self.dataframe_to_markdown(df))
+
+    def dataframe_to_markdown(self, df: pd.DataFrame) -> str:
+        markdown = df.to_markdown(index=False)
+        return markdown
 
 def create_evaluators(criteria: List[str], args, output_dir) -> List[Evaluator]:
     if criteria == "all":
@@ -52,7 +94,7 @@ def create_evaluators(criteria: List[str], args, output_dir) -> List[Evaluator]:
             if criterion == "fidelity":
                 evaluators.append(FidelityEvaluator(args, output_dir))
             if criterion == "temporal":
-                raise NotImplementedError
+                evaluators.append(TemporalFidelityEvaluator(args, output_dir))
             if criterion == "diversity":
                 raise NotImplementedError
             if criterion == "utility":
