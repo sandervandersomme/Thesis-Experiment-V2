@@ -1,18 +1,20 @@
+import torch
+import os
+import pickle
+from typing import List
 import argparse
+
+# Data imports
 from src.data.data_loader import select_data, create_downstream_data
 from src.data.data_processing import split
+
+# Model training imports
 from src.models.models import load_gen_model, train_gen_model, task_to_model
 from src.training.hyperparameters import load_default_params, load_optimal_params, add_shape_to_params
 from src.training.tuning import GenTuner, DownstreamTuner
-from src.eval.newevaluator import Evaluator
+
+# Evaluation imports
 from src.eval.collector import Collector
-import torch
-import os
-import pickle
-import argparse
-import os
-import pickle
-import torch
 
 class Pipeline:
     def __init__(self, args):
@@ -119,24 +121,11 @@ class Pipeline:
         with open(os.path.join(self.MODEL_DIR, f"{self.args.dataset}-{model_type}-{model_id}" + '.pkl'), 'rb') as f:
             return pickle.load(f)
 
-    # def evaluate_models(self):
-    #     evaluator = Evaluator(self.args.criteria, self.dataset, self.train_data.indices, self.test_data.indices, self.EVAL_DIR, self.HYPERPARAM_DIR, self.args)
-    #     for model_type in self.args.models:
-    #         for model_id in range(self.args.num_instances):
-    #             model = self.load_model(model_type, model_id)
-    #             for syndata_id in range(self.args.num_syn_datasets):
-    #                 dataset_name = f"{self.args.dataset}-{model_type}-{model_id}-{syndata_id}"
-    #                 dataset_path = os.path.join(self.SYNDATA_DIR, dataset_name + '.pt')
-    #                 if os.path.exists(dataset_path):
-    #                     syndata = torch.load(dataset_path)
-    #                     print(f"Evaluating synthetic dataset {dataset_name}")
-    #                     evaluator.evaluate(model, syndata, model_type, model_id, syndata_id)
-    #     evaluator.save_results_to_csv()
-    #     evaluator.save_averages()
-
     def evaluate_models(self):
-        collector = Collector(self.real_data, self.train_data.indices, self.test_data.indices, args, self.EVAL_DIR)
+        collector = Collector(self.args.criteria, self.args.models, args.num_instances, args.num_syn_datasets, self.args, self.EVAL_DIR)
         collector.collect_results()
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
