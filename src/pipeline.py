@@ -25,6 +25,7 @@ class Pipeline:
         self.EVAL_DIR = f"{self.output_path}eval/"
 
     def setup_folders(self):
+        print("Setting up project folder structure...")
         self.output_path = f"outputs/{self.args.output_folder}/"
         os.makedirs(f"{self.output_path}syndata", exist_ok=True)
         os.makedirs(f"{self.output_path}hyperparams/trials/", exist_ok=True)
@@ -33,14 +34,15 @@ class Pipeline:
         os.makedirs(f"{self.output_path}models", exist_ok=True)
 
     def setup_data(self):
-        self.dataset = select_data(self.args.dataset)
+        print("Setting up data")
+        self.real_data = select_data(self.args.dataset)
         self.train_data, self.test_data = self.split_data()
         self.train_shape = (len(self.train_data), *self.train_data[0].size())
         self.test_shape = (len(self.test_data), *self.test_data[0].size())
 
 
     def split_data(self):
-        return split(self.dataset, self.args.split_size, self.args.seed)
+        return split(self.real_data, self.args.split_size, self.args.seed)
 
     def execute(self):
         if self.args.flag_gen_tuning:
@@ -67,9 +69,9 @@ class Pipeline:
     def tune_downstream_models(self):
         print("Start tuning downstream model")
 
-        train_sequences = self.dataset[self.train_data.indices]
+        train_sequences = self.real_data[self.train_data.indices]
         for task in self.args.tasks:
-            train_data_downstream = create_downstream_data(self.args.dataset, task, train_sequences, self.dataset.columns)
+            train_data_downstream = create_downstream_data(self.args.dataset, task, train_sequences, self.real_data.columns)
 
             tuner = DownstreamTuner(train_data_downstream, self.args.dataset, self.args.seed, self.output_path)
             model = task_to_model(task)
@@ -133,7 +135,8 @@ class Pipeline:
     #     evaluator.save_averages()
 
     def evaluate_models(self):
-        collector = Collector(args, self.EVAL_DIR)
+        collector = Collector(self.real_data, self.train_data.indices, self.test_data.indices, args, self.EVAL_DIR)
+        collector.collect_results()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
