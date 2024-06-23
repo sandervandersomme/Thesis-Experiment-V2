@@ -1,4 +1,5 @@
 import torch
+from torch.utils.data import Dataset
 from typing import List
 from src.models.gen_model import GenModel
 
@@ -12,7 +13,6 @@ class Evaluator():
         self.average_results = None
         self.num_datasets = 0
 
-
-    def evaluate_dataset(self, dataset: torch.Tensor, dataset_id: int, model: GenModel, model_id: int):
-        pass
+    def evaluate_dataset(self, dataset: torch.Tensor, dataset_id: int, model: GenModel, model_id: int, real_data, train_indices, test_indices):
+        raise NotImplementedError
 

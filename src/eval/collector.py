@@ -1,4 +1,6 @@
 from typing import List
+from torch.utils.data import Dataset
+import torch
 
 from src.eval.diversity.diversity_evaluator import DiversityEvaluator
 from src.eval.privacy.privacy_evaluator import PrivacyEvaluator
@@ -9,27 +11,28 @@ from src.utils import get_filenames_of_models, get_filenames_of_syndatasets, loa
 from src.eval.newevaluator import Evaluator
 
 class Collector():
-    def __init__(self, args, eval_dir) -> None:
-        self.models = args.models
-        self.criteria = args.criteria
+    def __init__(self, real_data: Dataset, train_indices: torch.Tensor, test_indices: torch.Tensor, args, eval_dir: str) -> None:
+        self.real_data = real_data
+        self.train_indices = train_indices
+        self.test_indices = test_indices
+
         self.eval_dir = eval_dir
-        self.eval_args = args
-        self.num_instances = args.num_instances
-        self.num_datasets = args.num_datasets
+        self.args = args
+        self.args
 
         self.results_full = None
         self.results_average = None
 
     def collect_results(self):
-        for model_type in self.models:
+        for model_type in self.args.models:
             self.model_type = model_type
-            self.filenames_datasets = get_filenames_of_syndatasets(model_type, self.num_instances, self.num_datasets)
-            self.filenames_models = get_filenames_of_models(model_type, self.num_instances)
+            self.filenames_datasets = get_filenames_of_syndatasets(model_type, self.args.num_instances, self.args.num_syn_datasets)
+            self.filenames_models = get_filenames_of_models(model_type, self.args.num_instances)
             self.evaluate_criteria()
 
     def _evaluate_fidelity(self):
         # Create evaluator
-        evaluator = FidelityEvaluator(self.eval_args, self.eval_dir)
+        evaluator = FidelityEvaluator(self.args, self.eval_dir)
         results, average_results = self._evaluate(evaluator)
         # Add results
         raise NotImplementedError
@@ -47,7 +50,7 @@ class Collector():
         raise NotImplementedError
 
     def evaluate_criteria(self):
-        for criterion in self.criteria:
+        for criterion in self.args.criteria:
             if criterion == "all":
                 self._evaluate_fidelity()
                 self._evaluate_temporal_fidelity()
@@ -78,7 +81,7 @@ class Collector():
                 syndata = load_model(self.eval_dir, syndata_filename)
                 
                 # Evaluate data
-                evaluator.evaluate_dataset(syndata, syndata_id, model, model_id)
+                evaluator.evaluate_dataset(syndata, syndata_id, model, model_id, self.real_data, self.train_indices, self.test_indices)
 
         # Calculate averages
         # Visualise results
