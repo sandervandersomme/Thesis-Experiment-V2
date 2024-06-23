@@ -1,4 +1,4 @@
-from src.eval.newevaluator import Evaluator
+from src.eval.evaluators.evaluator import Evaluator
 
 class PrivacyEvaluator(Evaluator):
     def __init__(self, num_datasets: int, num_instances: int, eval_dir: str) -> None:

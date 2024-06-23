@@ -1,4 +1,4 @@
-from src.eval.newevaluator import Evaluator
+from src.eval.evaluators.evaluator import Evaluator
 
 
 class TemporalFidelityEvaluator(Evaluator):

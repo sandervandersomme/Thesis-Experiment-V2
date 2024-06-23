@@ -1,7 +1,7 @@
-from src.eval.newevaluator import Evaluator
+from src.eval.evaluators.evaluator import Evaluator
 
 
-class DiversityEvaluator(Evaluator):
+class UtilityEvaluator(Evaluator):
     def __init__(self, num_datasets: int, num_instances: int, eval_dir: str) -> None:
         super().__init__(num_datasets, num_instances, eval_dir)
 
