@@ -40,21 +40,8 @@ class FidelityEvaluator(Evaluator):
         non_avg_scores_df['Distance Score'] = pd.Series(self.all_distances)
 
         # Calculate averages
-        avg_statistic_scores = sum(statistics)/len(statistics)
         avg_statistics_per_variable = sum(statistics_per_variable)/len(statistics_per_variable)
-        avg_correlation_score = sum(correlation_scores)/len(correlation_scores)
         avg_correlation_matrix = sum(correlation_matrices)/len(correlation_matrices)
-        avg_distance = sum(self.all_distances)/len(self.all_distances)
-
-        # Save averaged results to dataframe
-        avg_scores_df = pd.DataFrame({
-            'Statistic Mean': [avg_statistic_scores.iloc[0]],
-            'Statistic Std': [avg_statistic_scores.iloc[1]],
-            'Statistic Median': [avg_statistic_scores.iloc[2]],
-            'Statistic Var': [avg_statistic_scores.iloc[3]],
-            'Correlation Score': [avg_correlation_score],
-            'Distance Score': [avg_distance]
-        })
         
         # Create DataFrame for avg_statistics_per_variable
         avg_statistics_df = pd.DataFrame(avg_statistics_per_variable)
@@ -77,4 +64,5 @@ class FidelityEvaluator(Evaluator):
         plt.savefig(plot_path)
         plt.close()
 
-        return avg_scores_df, non_avg_scores_df
+        return non_avg_scores_df
+    
