@@ -5,9 +5,11 @@ import pandas as pd
 
 class Evaluator():
     def __init__(self, eval_args: str, output_dir) -> None:
+        self.output_dir = output_dir
         self.eval_args = eval_args
         self.eval_dir = os.path.join(output_dir, "eval/")
         self.syn_data_dir = os.path.join(output_dir, "syndata/")
+        self.hyperparams_dir = os.path.join(output_dir, "hyperparams/trials/")
 
         # Collect results
         self.results = None
