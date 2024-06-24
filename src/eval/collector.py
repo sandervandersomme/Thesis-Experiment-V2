@@ -21,6 +21,7 @@ class Collector():
 
         self.output_dir = output_dir
         self.eval_dir = os.path.join(output_dir, 'eval/')
+        self.model_dir = os.path.join(output_dir, 'models/')
         self.args = args
 
         self.results_full = pd.DataFrame()
@@ -39,6 +40,7 @@ class Collector():
 
     def collect_model_results(self, model: str, model_files: List[str]):
         print(f"Start evaluating model {model}..")
+
         # Create new evaluators for model
         self.evaluators = create_evaluators(self.criteria, self.args, self.output_dir)
 
@@ -50,8 +52,10 @@ class Collector():
 
         # Use evaluators for evaluation of the datasets
         for evaluator in self.evaluators:
-            new_full_scores = evaluator.evaluate(filenames_datasets)
-            model_scores_df = pd.concat([model_scores_df, new_full_scores], axis=1)
+            for filename in model_files:
+                self.args.model = load_model(self.model_dir, filename)
+                new_full_scores = evaluator.evaluate(filenames_datasets)
+                model_scores_df = pd.concat([model_scores_df, new_full_scores], axis=1)
 
         # Add model information
         model_scores_df['Model'] = model
