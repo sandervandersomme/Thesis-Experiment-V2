@@ -24,7 +24,7 @@ class Collector():
         self.args = args
 
         self.results_full = pd.DataFrame()
-        self.results_average = pd.DataFrame()
+        # self.results_average = pd.DataFrame()
 
     def collect_results(self):
         for model_type in self.args.models:
@@ -32,9 +32,10 @@ class Collector():
             model_files = get_filenames_of_models(model_type, self.num_instances)
 
             self.collect_model_results(model_type, model_files)
-        # Save results to files
 
+        self.results_average = self.results_full.groupby('Model').mean().reset_index()
         self.save_results()
+
 
     def collect_model_results(self, model: str, model_files: List[str]):
         print(f"Start evaluating model {model}..")
@@ -44,25 +45,21 @@ class Collector():
         # Get files of datasets
         filenames_datasets = get_filenames_of_syndatasets(model, self.num_instances, self.num_datasets)
         
+        # Initialise dataframe for collecting model results
         model_scores_df = pd.DataFrame()
-        avg_model_scores_df = pd.DataFrame()
 
         # Use evaluators for evaluation of the datasets
         for evaluator in self.evaluators:
-            new_avg_model_scores, new_full_scores = evaluator.evaluate(filenames_datasets)
-
+            new_full_scores = evaluator.evaluate(filenames_datasets)
             model_scores_df = pd.concat([model_scores_df, new_full_scores], axis=1)
-            avg_model_scores_df = pd.concat([avg_model_scores_df, new_avg_model_scores], axis=1)
-                
-        
 
+        # Add model information
         model_scores_df['Model'] = model
-        avg_model_scores_df['Model'] = model  # Add model information as a column
-        self.results_average = pd.concat([self.results_average, avg_model_scores_df], axis=0)
+
+        # Add model results to all results
         self.results_full = pd.concat([self.results_full, model_scores_df], axis=0)
 
 
-        
     def save_results(self):
         # Ensure the output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
