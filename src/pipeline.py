@@ -89,7 +89,7 @@ class Pipeline:
                 print(f"Start training {model_type} #{instance_id}")
                 model = load_gen_model(model_type, hyperparams)
                 self.train_model(model)
-                self.save_model(model, f"{self.args.dataset}-{model_type}-{instance_id}")
+                self.save_model(model, f"{model_type}-{instance_id}")
 
     def load_hyperparams(self, model_class):
         if self.args.flag_default_params:
@@ -159,10 +159,9 @@ if __name__ == "__main__":
     parser.add_argument("--n_neighbors_diversity", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--coverage_factor", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--mia_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
-    parser.add_argument("--matching_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
-    parser.add_argument("--reid_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
+    parser.add_argument("--dtw_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--aia_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
-    parser.add_argument("--num_hidden_attributes", type=int, default=5, help="number of neighbors for KNN in diversity")
+    parser.add_argument("--num_disclosed_attributes", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--n_neighbors_privacy", type=int, default=5, help="number of neighbors for KNN in diversity")
     args = parser.parse_args()
 
