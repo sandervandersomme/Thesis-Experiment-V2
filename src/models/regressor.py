@@ -26,7 +26,7 @@ class TimeseriesRegressor(DownstreamModel):
         output = self.fc(output)
         return output[:, -1, :] # Take classification of last time-step
     
-def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Dataset, epochs: int, plot_path:str=None):
+def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Dataset, epochs: int, plot_path:str=None, verbose=True):
     loss_fn = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=model.learning_rate)
     train_loader = DataLoader(train_data, batch_size=model.batch_size, shuffle=True)
@@ -56,14 +56,16 @@ def train_regressor(model: DownstreamModel, train_data: Dataset, val_data: Datas
         # Check for early stopping
         early_stopping(val_loss)
         if early_stopping.early_stop:
-            print(f"Early stopping at epoch {epoch+1}")
+            if verbose:
+                print(f"Early stopping at epoch {epoch+1}")
             break
 
         # Check if best loss has increased (for hyperparameter optimization)
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-
-        print(f'Epoch {epoch+1}/{epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
+        
+        if verbose:
+            print(f'Epoch {epoch+1}/{epochs}, Avg. train Loss: {loss}, Avg. val Loss: {val_loss}')
     
     # Visualise losses over epochs
     if plot_path:
