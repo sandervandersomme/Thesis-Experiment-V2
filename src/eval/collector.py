@@ -93,7 +93,9 @@ def create_evaluators(criteria: List[str], args, output_dir) -> List[Evaluator]:
         return [
             FidelityEvaluator(args, output_dir),
             TemporalFidelityEvaluator(args, output_dir),
-            DiversityEvaluator(args, output_dir)
+            DiversityEvaluator(args, output_dir),
+            UtilityEvaluator(args, output_dir),
+            PrivacyEvaluator(args, output_dir)
         ]
     else: 
         evaluators = []
@@ -105,7 +107,7 @@ def create_evaluators(criteria: List[str], args, output_dir) -> List[Evaluator]:
             if criterion == "diversity":
                 evaluators.append(DiversityEvaluator(args, output_dir))
             if criterion == "utility":
-                raise NotImplementedError
+                evaluators.append(UtilityEvaluator(args, output_dir))
             if criterion == "privacy":
-                raise NotImplementedError
+                evaluators.append(PrivacyEvaluator(args, output_dir))
     return evaluators
