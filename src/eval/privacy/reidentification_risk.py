@@ -1,43 +1,44 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
-from sklearn.metrics.pairwise import cosine_similarity
 
+from tslearn.metrics import dtw as dtw_distance
+from sklearn.metrics import precision_score, recall_score, mean_squared_error, roc_auc_score
 
-from src.data.data_processing import generate_random_data
-from src.data.data_processing import flatten_into_sequences
+from src.utils import set_device
 
-def reidentification_risk(train_data: torch.Tensor, syndata: torch.Tensor, reid_threshold: float):
-    train_data = flatten_into_sequences(train_data)
-    syndata = flatten_into_sequences(syndata)
-
-    similarity_matrix = cosine_similarity(train_data, syndata)
-
-    # Find the maximum similarity for each real data sample
-    max_similarities = np.max(similarity_matrix, axis=1)
-
-    # Calculate the re-identification risk
-    risk = np.mean(max_similarities > reid_threshold)
-
-    return {"reid risk": risk}
-
-def plot(max_similarities, threshold):
-    sorted_similarities = np.sort(max_similarities)
-    cdf = np.arange(1, len(sorted_similarities) + 1) / len(sorted_similarities)
+def reidentification_risk(syndata: torch.Tensor, train_data: torch.Tensor, dtw_threshold: float):
+    device = set_device()
     
-    plt.figure(figsize=(10, 6))
-    plt.plot(sorted_similarities, cdf, marker='.', linestyle='none', color='blue')
-    plt.axvline(threshold, color='red', linestyle='--', linewidth=2, label=f'Threshold = {threshold}')
-    plt.xlabel('Maximum Similarity Scores')
-    plt.ylabel('Cumulative Proportion')
-    plt.title('CDF of Maximum Similarity Scores between Real and Synthetic Data')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    syndata = syndata[:, None, :, :]
+    t_data = train_data[None, :, :, :]
+    
+    # Calculate DTW distances
+    distances = torch.zeros(syndata.size(0), train_data.size(0), device=device)
+    for i in range(syndata.size(0)):
+        for j in range(train_data.size(0)):
+            distances[i, j] = dtw_distance(syndata[i].cpu().numpy().squeeze(),
+                                           t_data[0, j].cpu().numpy().squeeze())
+    
+    # Determine membership based on DTW distance threshold
+    inferred_membership = (distances.min(dim=1).values < dtw_threshold).int()
 
-if __name__ == '__main__':
-    realdata = generate_random_data(200, 5, 20)
-    syndata = generate_random_data(200, 5, 20)
+    # Convert tensors to numpy arrays
+    inferred_membership_np = inferred_membership.cpu().numpy()
+    labels_np = np.ones(train_data.size(0))  # Assuming all are potential reidentification risks
 
-    risk = reidentification_risk(realdata, syndata, 0.9, True)
-    print(f"reidentification risk: {risk}")
+    # Calculate precision and recall
+    precision = precision_score(labels_np, inferred_membership_np)
+    recall = recall_score(labels_np, inferred_membership_np)
+
+    # Calculate mean squared error
+    mse = mean_squared_error(labels_np, inferred_membership_np)
+
+    # Calculate AUC-ROC
+    auc_roc = roc_auc_score(labels_np, inferred_membership_np)
+
+    return {
+        "precision": precision, 
+        "recall": recall, 
+        "mse": mse, 
+        "auc_roc": auc_roc 
+    }
