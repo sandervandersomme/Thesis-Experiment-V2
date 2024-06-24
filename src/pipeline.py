@@ -39,6 +39,8 @@ class Pipeline:
         print("Setting up data")
         self.real_data = select_data(self.args.dataset)
         self.train_data, self.test_data = self.split_data()
+        self.train_indices = self.train_data.indices
+        self.test_indices = self.test_data.indices
         self.train_shape = (len(self.train_data), *self.train_data[0].size())
         self.test_shape = (len(self.test_data), *self.test_data[0].size())
 
@@ -152,7 +154,7 @@ if __name__ == "__main__":
     parser.add_argument("--num_syn_datasets", default=3, type=int)
     parser.add_argument("--num_syn_samples", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--criteria", nargs="*", choices=["privacy", "fidelity", "utility", "diversity", "temporal_fidelity", "all"])
+    parser.add_argument("--criteria", nargs="*", choices=["privacy", "fidelity", "utility", "diversity", "temporal", "all"])
     parser.add_argument("--n_components", type=int, default=7, help="number of components for PCA in diversity evaluation")
     parser.add_argument("--n_neighbors_diversity", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--mia_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
