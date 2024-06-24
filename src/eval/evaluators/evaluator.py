@@ -18,8 +18,9 @@ class Evaluator():
             syn_dataset = load_dataset(self.syn_data_dir, filename)
             self._evaluate_dataset(syn_dataset)
         
-        avgs_scores, full_scores = self._post_processing()
-        return avgs_scores, full_scores
+        full_scores = self._post_processing()
+
+        return full_scores
 
     def _evaluate_dataset(self):
         raise NotImplementedError
