@@ -25,12 +25,15 @@ def calc_distance(nn: NearestNeighbors, data):
     set_distance = torch.mean(torch.tensor(distances))
     return set_distance
 
-def calc_coverage(nn_synthetic, real_data_embedded, threshold = 1): 
+def calc_coverage(nn_synthetic, real_data_embedded, intra_set_distance: float, threshold_factor: float): 
     distances_syn_to_real, _ = nn_synthetic.kneighbors(real_data_embedded)
-    coverage = torch.mean((torch.tensor(distances_syn_to_real) < threshold).float())
-    return coverage
+    
+    distance_threshold = intra_set_distance * threshold_factor
 
-def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, reshape_method: str="events"):
+    coverage = torch.mean((torch.tensor(distances_syn_to_real) <= distance_threshold).float())
+    return coverage.item()
+
+def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, threshold_factor: float, reshape_method: str="events"):
     if reshape_method == "sequences":
         train_data = flatten_into_sequences(train_data)
         syndata = flatten_into_sequences(syndata)
@@ -53,8 +56,5 @@ def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, 
     relative_diversity = intra_set_distance_syn - intra_set_distance_real
     relative_coverage = inter_set_distance - intra_set_distance_real
 
-    threshold = np.percentile(nn_syn.kneighbors(real_embedded)[0], 85)
-    absolute_coverage = calc_coverage(nn_syn, real_embedded, threshold=threshold).item()
-
-    return absolute_coverage, relative_coverage, relative_diversity
+    return relative_coverage, relative_diversity, intra_set_distance_syn, intra_set_distance_real, inter_set_distance
 
