@@ -64,16 +64,14 @@ class AIA:
 
 def is_binary(tensor): return torch.all((tensor == 0) | (tensor == 1))
 
-def perform_aia(syndata: torch.Tensor, train_data: torch.Tensor, n_neighbors=1, aia_threshold=0.1, num_disclosed_attributes:int=3):
+def attribute_disclosure_attack(syndata: torch.Tensor, train_data: torch.Tensor, n_neighbors=1, aia_threshold=0.1, num_disclosed_attributes:int=3):
     unknown_indices = torch.randperm(train_data.size(2))[:num_disclosed_attributes]
     known_indices = get_known_indices(unknown_indices, train_data.size(2))
 
     attack = AIA(known_indices, unknown_indices, aia_threshold, n_neighbors=1)
     risk = attack.calculate_risk(syndata, train_data)
 
-    return {
-        "attribute disclosure risk": risk.item()
-    }
+    return risk.item()
 
 def get_known_indices(unknown_indices:torch.Tensor, num_features):
     # Determine random attributes to hide
@@ -83,14 +81,3 @@ def get_known_indices(unknown_indices:torch.Tensor, num_features):
     known_indices = all_indices[mask]
 
     return known_indices
-
-if __name__ == "__main__":
-    from src.data.data_processing import generate_random_data
-
-    # Example usage
-    syndata = generate_random_data(400,5,20)
-    realdata = generate_random_data(400,5,20)
-
-    # Define the indices for known and unknown attributes
-    risk = perform_aia(syndata, realdata)
-    print(risk)
