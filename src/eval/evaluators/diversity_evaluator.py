@@ -10,12 +10,14 @@ class DiversityEvaluator(Evaluator):
         super().__init__(eval_args, output_dir)         
         self.eval_dir = os.path.join(self.eval_dir, "diversity/")
 
+        # Calculate metrics for diversity of sequences
         self.total_rel_diversity_sequences = []
         self.total_rel_coverage_sequences = []
         self.total_intra_real_sequences = []
         self.total_intra_syn_sequences = []
         self.total_inter_sequences = []
 
+        # Calculate metrics for diversity of events
         self.total_rel_diversity_events = []
         self.total_rel_coverage_events = []
         self.total_intra_real_events = []
