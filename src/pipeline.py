@@ -157,6 +157,7 @@ if __name__ == "__main__":
     parser.add_argument("--criteria", nargs="*", choices=["privacy", "fidelity", "utility", "diversity", "temporal", "all"])
     parser.add_argument("--n_components", type=int, default=7, help="number of components for PCA in diversity evaluation")
     parser.add_argument("--n_neighbors_diversity", type=int, default=5, help="number of neighbors for KNN in diversity")
+    parser.add_argument("--coverage_factor", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--mia_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--matching_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
     parser.add_argument("--reid_threshold", type=int, default=5, help="number of neighbors for KNN in diversity")
