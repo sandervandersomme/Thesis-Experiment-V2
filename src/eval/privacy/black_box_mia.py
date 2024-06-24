@@ -18,7 +18,7 @@ class BlackBoxMia():
         mixed_data = torch.cat((train_data, test_data), dim=0).to(self.device)
         train_labels = torch.ones(train_data.size(0)).to(self.device)
         test_labels = torch.zeros(test_data.size(0)).to(self.device)
-        labels = torch.cat((train_labels, test_labels), dim=0).to(self.device)
+        true_labels = torch.cat((train_labels, test_labels), dim=0).to(self.device)
 
         # Start attack
         self.discriminator.eval()
@@ -30,25 +30,28 @@ class BlackBoxMia():
             else:
                 predictions = self.discriminator(mixed_data)
         
-        scores_vs_labels = list(zip(predictions, labels.tolist()))
-        scores_vs_labels.sort(key=lambda x: x[0], reverse=True)
+        # Evaluate attack performance
+        predicted_labels = (predictions >= threshold).float()
 
-        train_scores = [(score.item(), label) for (score, label) in scores_vs_labels if label == 1]
+        # Calculate True Positve and False Positive rate
+        tp = (predicted_labels * true_labels).sum().item()
+        tn = ((1 - predicted_labels) * (1 - true_labels)).sum().item()
+        fp = (predicted_labels * (1 - true_labels)).sum().item()
+        fn = ((1 - predicted_labels) * true_labels).sum().item()
+        tpr = tp / (tp + fn) if (tp + fn) > 0 else 0
+        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
 
-        # Calculate risk
-        high_confidence_scores = [score for (score, _) in train_scores if score >= threshold]
-        num_samples_at_risk = len(high_confidence_scores)
-
-        # Calculate attacker accuracy
-        correct_predictions = sum(1 for (score, label) in scores_vs_labels if int(score) == label)
-        total_predictions = len(scores_vs_labels)
-        accuracy = correct_predictions / total_predictions
+        # Calculate metrics
+        accuracy = (tp + tn) / (tp + tn + fp + fn)
+        balanced_accuracy_advantage = 0.5 * (tpr + (1 - fpr)) - 0.5
 
         return {
-            "BBMIA samples at risk": num_samples_at_risk,
-            "BBMIA samples at risk": num_samples_at_risk/len(train_data),
-            "BBMIA total accuracy": accuracy
+            "tpr": tpr, 
+            "fpr": fpr, 
+            "accuracy": accuracy, 
+            "balanced_accuracy_advantage": balanced_accuracy_advantage 
         }
+
 
 def attack_timegan(model: TimeGAN, data):
     outputs = model.embedder(data)
