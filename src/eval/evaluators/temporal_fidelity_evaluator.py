@@ -26,6 +26,7 @@ class TemporalFidelityEvaluator(Evaluator):
         self.total_results_autocorrelations.append(similarity_auto_correlations(self.eval_args.real_data.sequences, syndata, self.eval_args.columns))
 
     def _post_processing(self):
+        print("Post-processing temporal fidelity results")
         unzipped_distances_distributions = zip(*self.total_results_event_distributions)
         unzipped_temporal_distances = zip(*self.total_results_temporal_distances)
         unzipped_correlations = zip(*self.total_results_autocorrelations)
