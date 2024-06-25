@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-
 from tslearn.metrics import dtw as dtw_distance
 from sklearn.metrics import precision_score, recall_score, mean_squared_error, roc_auc_score
 
@@ -24,7 +23,9 @@ def reidentification_risk(syndata: torch.Tensor, train_data: torch.Tensor, dtw_t
 
     # Convert tensors to numpy arrays
     inferred_membership_np = inferred_membership.cpu().numpy()
-    labels_np = np.ones(train_data.size(0))  # Assuming all are potential reidentification risks
+    
+    # Assuming labels for synthetic data (syndata) based on your context
+    labels_np = np.ones(syndata.size(0))  # Assuming all are potential reidentification risks
 
     # Calculate precision and recall
     precision = precision_score(labels_np, inferred_membership_np)
@@ -33,8 +34,11 @@ def reidentification_risk(syndata: torch.Tensor, train_data: torch.Tensor, dtw_t
     # Calculate mean squared error
     mse = mean_squared_error(labels_np, inferred_membership_np)
 
-    # Calculate AUC-ROC
-    auc_roc = roc_auc_score(labels_np, inferred_membership_np)
+    # Calculate AUC-ROC if both classes are present
+    if len(np.unique(labels_np)) == 1:
+        auc_roc = None  # or any default value you choose
+    else:
+        auc_roc = roc_auc_score(labels_np, inferred_membership_np)
 
     return {
         "precision": precision, 
