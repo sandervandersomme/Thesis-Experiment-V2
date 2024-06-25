@@ -22,6 +22,7 @@ class UtilityEvaluator(Evaluator):
         self.reg_results = []
 
     def evaluate(self, files: List[str]):
+        print(f"Start utility evaluation of model {self.eval_args.model_type}..")
         return super().evaluate(files)
 
     def _evaluate_dataset(self, syndata: torch.Tensor):
@@ -86,13 +87,13 @@ class UtilityEvaluator(Evaluator):
         save_raw_results_table(raw_results_df, self.eval_dir, f"{self.eval_args.model_type}_raw_classification_scores")
 
         # Process confusion matrices
-        avg_real_confusion_matrices = sum([raw_results["confusion_matrix_real"] for raw_results in all_raw_results]) / len(all_raw_results)
-        avg_synthetic_confusion_matrices = sum([raw_results["confusion_matrix_synthetic"] for raw_results in all_raw_results]) / len(all_raw_results)
+        avg_real_confusion_matrix = sum([raw_results["confusion_matrix_real"] for raw_results in all_raw_results]) / len(all_raw_results)
+        avg_synthetic_confusion_matrix = sum([raw_results["confusion_matrix_synthetic"] for raw_results in all_raw_results]) / len(all_raw_results)
         avg_diff_matrix = sum([scores["diff_matrix"] for scores in all_scores])  / len(all_scores)
 
         # Visualize confusion matrices
-        self._visualise_confusion_matrix(avg_real_confusion_matrices, "Average Real Confusion Matrix", f"{self.eval_args.model_type}_avg_real_conf_matrix_classification")
-        self._visualise_confusion_matrix(avg_synthetic_confusion_matrices, "Average Synthetic Confusion Matrix", f"{self.eval_args.model_type}_avg_syn_conf_matrix_classification")
+        self._visualise_confusion_matrix(avg_real_confusion_matrix, "Average Real Confusion Matrix", f"{self.eval_args.model_type}_avg_real_conf_matrix_classification")
+        self._visualise_confusion_matrix(avg_synthetic_confusion_matrix, "Average Synthetic Confusion Matrix", f"{self.eval_args.model_type}_avg_syn_conf_matrix_classification")
         self._visualise_confusion_matrix(avg_diff_matrix, "Average Difference Matrix", f"{self.eval_args.model_type}_avg_diff_matrix_classification")
 
         return scores_df

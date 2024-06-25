@@ -17,6 +17,7 @@ class FidelityEvaluator(Evaluator):
         self.all_distances = []
 
     def evaluate(self, files: List[str]):
+        print(f"Start fidelity evaluation of model {self.eval_args.model_type}..")
         return super().evaluate(files)
 
     def _evaluate_dataset(self, syndata: torch.Tensor):

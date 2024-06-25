@@ -18,6 +18,7 @@ class TemporalFidelityEvaluator(Evaluator):
         self.total_results_autocorrelations = []
 
     def evaluate(self, files: List[str]):
+        print(f"Start temporal fidelity evaluation of model {self.eval_args.model_type}..")
         return super().evaluate(files)
 
     def _evaluate_dataset(self, syndata: torch.Tensor):

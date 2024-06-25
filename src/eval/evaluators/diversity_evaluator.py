@@ -25,6 +25,7 @@ class DiversityEvaluator(Evaluator):
         self.total_inter_events = []
 
     def evaluate(self, files: List[str]):
+        print(f"Start diversity evaluation of model {self.eval_args.model_type}..")
         return super().evaluate(files)
 
     def _evaluate_dataset(self, syndata: torch.Tensor):
