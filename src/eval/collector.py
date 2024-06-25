@@ -51,7 +51,8 @@ class Collector():
         model_scores_df = pd.DataFrame()
 
         # Use evaluators for evaluation of the datasets
-        for evaluator in self.evaluators:
+        for id in range(len(self.evaluators)):
+            evaluator = self.evaluators.pop()
             for filename in model_files:
                 self.args.model = load_model(self.model_dir, filename)
                 new_full_scores = evaluator.evaluate(filenames_datasets)
