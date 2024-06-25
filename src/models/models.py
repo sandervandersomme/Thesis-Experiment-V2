@@ -10,13 +10,13 @@ from src.models.timegan import TimeGAN, train_TimeGAN
 from src.models.gen_model import GenModel
 from src.models.downsteam_model import DownstreamModel
 
-def train_gen_model(model, train_data: torch.Tensor, epochs:int, log_loss_dir: str=None):
+def train_gen_model(model, train_data: torch.Tensor, epochs:int, log_loss_dir: str=None, verbose=True):
     if isinstance(model, RGAN):
-        return train_RGAN(model, train_data, epochs, log_loss_dir)
+        return train_RGAN(model, train_data, epochs, log_loss_dir, verbose)
     elif isinstance(model, TimeGAN):
-        return train_TimeGAN(model, train_data, epochs, log_loss_dir)
+        return train_TimeGAN(model, train_data, epochs, log_loss_dir, verbose)
     elif isinstance(model, RWGAN):
-        return train_RWGAN(model, train_data, epochs, log_loss_dir)
+        return train_RWGAN(model, train_data, epochs, log_loss_dir, verbose)
 
     raise NotImplementedError
     
