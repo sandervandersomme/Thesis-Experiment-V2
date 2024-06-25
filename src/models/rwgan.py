@@ -51,7 +51,7 @@ class ClipConstraint():
         for p in model.parameters():
             p.data.clamp_(-self.clip_value, self.clip_value)
 
-def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_loss_dir:str=None):
+def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_loss_dir:str=None, verbose=True):
     # Setup training
     optimizer_generator = torch.optim.RMSprop(model.generator.parameters(), lr=model.learning_rate)
     optimizer_critic = torch.optim.RMSprop(model.critic.parameters(), lr=model.learning_rate)
@@ -87,14 +87,16 @@ def train_RWGAN(model: RWGAN, train_data: torch.Tensor, epochs:int, log_loss_dir
         # Check for early stopping
         early_stopping(val_loss)
         if early_stopping.early_stop:
-            print(f"Early stopping at epoch {epoch+1}")
+            if verbose:
+                print(f"Early stopping at epoch {epoch+1}")
             break
 
         # Check if best loss has increased
         if val_loss < best_val_loss:
             best_val_loss = val_loss
 
-        print(f"Epoch {epoch+1}/{epochs}, Loss C-real: {critic_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
+        if verbose:
+            print(f"Epoch {epoch+1}/{epochs}, Loss C-real: {critic_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
 
     if log_loss_dir:
         plot_losses(f"{log_loss_dir}loss.png", gen_losses, critic_losses)

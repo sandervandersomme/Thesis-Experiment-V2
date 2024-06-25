@@ -77,6 +77,8 @@ class TimeGAN(GenModel):
         self.embedder = Embedder(self.num_features, self.hidden_dim, self.latent_dim, self.num_layers).to(self.device)
         self.recovery = Recovery(self.latent_dim, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
 
+        self.verbose = True
+
     def generate_data(self, num_samples: int) -> torch.Tensor:
         noise = self.generate_noise(num_samples)
         with torch.no_grad():
@@ -85,7 +87,9 @@ class TimeGAN(GenModel):
             generated_data = self.recovery(supervised_embeddings)
             return generated_data    
 
-def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:str=None):
+def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:str=None, verbose=True):
+    model.verbose = verbose
+
     # Initialising optimizers
     generator_optimizer = torch.optim.Adam(model.generator.parameters(), lr=model.learning_rate)
     discriminator_optimizer = torch.optim.Adam(model.discriminator.parameters(), lr=model.learning_rate)
@@ -119,7 +123,8 @@ def train_TimeGAN(model: TimeGAN, train_data: torch.Tensor, epochs: int, log_los
 
 def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: int, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_loss_dir: str=None):
     # Train embedder and recovery: minimize construction loss
-    print('Start Training Phase 1: Minimize reconstruction loss')
+    if model.verbose:
+        print('Start Training Phase 1: Minimize reconstruction loss')
 
     # Track losses
     train_losses = []
@@ -139,14 +144,17 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
             best_val_loss = loss
         early_stopping(loss)
             
-        print(f"Epoch {epoch+1}/{epochs}, reconstruction Loss: {loss.item()}")
+        if model.verbose:
+            print(f"Epoch {epoch+1}/{epochs}, reconstruction Loss: {loss.item()}")
 
         # Check for early stopping
         if early_stopping.early_stop:
-            print(f"Early stopping at epoch {epoch+1}")
+            if model.verbose:
+                print(f"Early stopping at epoch {epoch+1}")
             break
 
-    print("Training phase 1 complete!")
+    if model.verbose:
+        print("Training phase 1 complete!")
 
     if log_loss_dir:
         plot_reconstruction_loss(f"{log_loss_dir}reconstruction-loss.png", train_losses)
@@ -154,7 +162,8 @@ def train_embedding_network(model: TimeGAN, train_loader: DataLoader, epochs: in
 def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_optim: torch.optim.Adam, emb_optim: torch.optim.Adam, mse_loss: torch.nn.MSELoss, log_loss_dir: str=None):
     
     # Training phase 2: Minimize supervised loss
-    print('Start Training Phase 2: Minimize unsupervised loss')
+    if model.verbose:
+        print('Start Training Phase 2: Minimize unsupervised loss')
 
     train_losses = []
 
@@ -174,11 +183,13 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_
             best_val_loss = loss
         early_stopping(loss)
             
-        print(f"Epoch {epoch+1}/{epochs}, Supervised Loss: {loss.item()}")
+        if model.verbose:
+            print(f"Epoch {epoch+1}/{epochs}, Supervised Loss: {loss.item()}")
 
         # Check for early stopping
         if early_stopping.early_stop:
-            print(f"Early stopping at epoch {epoch+1}")
+            if model.verbose:
+                print(f"Early stopping at epoch {epoch+1}")
             break
 
     if log_loss_dir:
@@ -187,7 +198,8 @@ def train_supervised(model: TimeGAN, train_loader: DataLoader, epochs: int, sup_
 def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, supervisor_optimizer: torch.optim.Adam, generator_optimizer: torch.optim.Adam, discriminator_optimizer: torch.optim.Adam, embedder_optimizer: torch.optim.Adam, recovery_optimizer: torch.optim.Adam, bce_loss: torch.nn.BCELoss, mse_loss: torch.nn.BCELoss, log_loss_dir: str=None):
     
     # Training phase 3: Joint training
-    print('Start Training Phase 3: Joint training')
+    if model.verbose:
+        print('Start Training Phase 3: Joint training')
 
     gen_losses = []
     emb_losses = []
@@ -241,10 +253,12 @@ def train_joint(model: TimeGAN, train_loader: DataLoader, epochs: int, superviso
         # Check for early stopping
         early_stopping(val_loss)
         if early_stopping.early_stop:
-            print(f"Early stopping at epoch {epoch+1}")
+            if model.verbose:
+                print(f"Early stopping at epoch {epoch+1}")
             break
         
-        print(f"Epoch {epoch+1}/{epochs}, Generator loss: {gen_loss.item()}, Embedder loss: {emb_loss.item()}, Discriminator Loss: {disc_loss.item()}, val loss: {val_loss}")
+        if model.verbose:
+            print(f"Epoch {epoch+1}/{epochs}, Generator loss: {gen_loss.item()}, Embedder loss: {emb_loss.item()}, Discriminator Loss: {disc_loss.item()}, val loss: {val_loss}")
 
     if log_loss_dir:
         plot_disc_losses(f"{log_loss_dir}disc_loss.png", disc_losses, val_losses)

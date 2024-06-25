@@ -22,7 +22,7 @@ class RGAN(GenModel):
         self.generator = Generator(self.num_features, self.hidden_dim, self.num_features, self.num_layers).to(self.device)
         self.discriminator = Discriminator(self.num_features, self.hidden_dim, self.num_layers).to(self.device)
 
-def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:str=None):
+def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:str=None, verbose=True):
     # Setup training
     half_batch = int(model.batch_size/2)
     train_loader = DataLoader(train_data, batch_size=half_batch, shuffle=True)
@@ -62,10 +62,12 @@ def train_RGAN(model: RGAN, train_data: torch.Tensor, epochs: int, log_loss_dir:
         # Check for early stopping
         early_stopping(val_loss)
         if early_stopping.early_stop:
-            print(f"Early stopping at epoch {epoch+1}")
+            if verbose:
+                print(f"Early stopping at epoch {epoch+1}")
             break
 
-        print(f"Epoch {epoch+1}/{epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
+        if verbose:
+            print(f"Epoch {epoch+1}/{epochs}, Loss D.: {disc_loss}, Loss G.: {gen_loss}, val loss: {val_loss}")
     
     if log_loss_dir:
         plot_losses(f"{log_loss_dir}loss.png", gen_losses, disc_losses)

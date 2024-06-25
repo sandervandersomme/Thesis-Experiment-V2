@@ -6,7 +6,7 @@ class BlackBoxMia():
     def __init__(self, target_model: GenModel, syndata: torch.Tensor, epochs: int=50):
         self.device = target_model.device
         self.shadow_model = target_model.__class__(**target_model.hyperparams)
-        train_gen_model(self.shadow_model, syndata, epochs)
+        train_gen_model(self.shadow_model, syndata, epochs, verbose=False)
         
         if isinstance(self.shadow_model, RWGAN):
             self.discriminator = self.shadow_model.critic
