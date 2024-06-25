@@ -121,7 +121,7 @@ class Pipeline:
             pickle.dump(model, f)
 
     def load_model(self, model_type, model_id):
-        with open(os.path.join(self.MODEL_DIR, f"{self.args.dataset}-{model_type}-{model_id}" + '.pkl'), 'rb') as f:
+        with open(os.path.join(self.MODEL_DIR, f"{model_type}-{model_id}" + '.pkl'), 'rb') as f:
             return pickle.load(f)
 
     def evaluate_models(self):
