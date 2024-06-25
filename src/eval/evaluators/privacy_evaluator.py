@@ -22,15 +22,21 @@ class PrivacyEvaluator(Evaluator):
         self.all_reid_risk = []
 
     def evaluate(self, files: List[str]):
+        print(f"Start privacy evaluation of model {self.eval_args.model_type}..")
+
         return super().evaluate(files)
 
     def _evaluate_dataset(self, syndata: torch.Tensor):
         train_data = self.eval_args.real_data[self.eval_args.train_data.indices]
         test_data = self.eval_args.real_data[self.eval_args.test_data.indices]
 
+        print("Evaluating MIA whitebox attack..")
         self.all_mia_w_results.append(mia_whitebox_attack(train_data, test_data, self.eval_args.model, self.eval_args.mia_threshold))
+        print("Evaluating MIA blackbox attack..")
         self.all_mia_b_results.append(mia_blackbox_attack(syndata, train_data, test_data, self.eval_args.model, self.eval_args.mia_threshold, self.eval_args.epochs))
+        print("Evaluating AIA..")
         self.all_aia_results.append(attribute_disclosure_attack(syndata, train_data, self.eval_args.n_neighbors_privacy, self.eval_args.aia_threshold, self.eval_args.num_disclosed_attributes))
+        print("Evaluating Reidentification risk..")
         self.all_reid_risk.append(reidentification_risk(syndata, train_data, self.eval_args.dtw_threshold))
 
     def _post_processing(self):
@@ -55,9 +61,9 @@ class PrivacyEvaluator(Evaluator):
         scores_df["MIA Black TPR"] = pd.Series(self.all_aia_results)
 
         # Process Reidentification risk scores
-        scores_df["Reid. Precision"] = pd.Series([results["precision"] for results in self.all_mia_b_results])
-        scores_df["Reid. Recall"] = pd.Series([results["recall"] for results in self.all_mia_b_results])
-        scores_df["Reid. MSE"] = pd.Series([results["mse"] for results in self.all_mia_b_results])
-        scores_df["Reid. AUC ROC"] = pd.Series([results["auc_roc"] for results in self.all_mia_b_results])
+        scores_df["Reid. Precision"] = pd.Series([results["precision"] for results in self.all_reid_risk])
+        scores_df["Reid. Recall"] = pd.Series([results["recall"] for results in self.all_reid_risk])
+        scores_df["Reid. MSE"] = pd.Series([results["mse"] for results in self.all_reid_risk])
+        scores_df["Reid. AUC ROC"] = pd.Series([results["auc_roc"] for results in self.all_reid_risk])
 
         return scores_df
