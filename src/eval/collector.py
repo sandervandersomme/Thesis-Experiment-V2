@@ -51,13 +51,6 @@ class Collector():
                     for criterion in self.criteria:
                         evaluator = select_evaluator(criterion, syndata, self.args, self.output_dir)
                         evaluator.evaluate()
-        
-        self.combine_results()
-
-    def combine_results(self):
-        raise NotImplementedError
-
-
 
 
 def select_evaluator(criterion: str, syndata: torch.Tensor, args, output_dir: str):
