@@ -1,35 +1,22 @@
-from typing import List
-from src.utils import load_dataset
 import os
-import pandas as pd
+import torch
 
 class Evaluator():
     def __init__(self, eval_args: str, output_dir) -> None:
-        self.output_dir = output_dir
+        # Store syndata
         self.eval_args = eval_args
+
+        # Setup dirs
+        self.output_dir = output_dir
         self.eval_dir = os.path.join(output_dir, "eval/")
         self.syn_data_dir = os.path.join(output_dir, "syndata/")
         self.hyperparams_dir = os.path.join(output_dir, "hyperparams/trials/")
 
-        # Collect results
-        self.results = None
-        self.average_results = None
+        # Create folder structure
+        self.setup_paths()
+        self.setup_folders()
 
-    def evaluate(self, files: List[str]):
-        for id, filename in enumerate(files):
-            syn_dataset = load_dataset(self.syn_data_dir, filename)
-            self._evaluate_dataset(syn_dataset)
-        
-        full_scores = self._post_processing()
-
-        return full_scores
-
-    def _evaluate_dataset(self):
-        raise NotImplementedError
-    
-    def _post_processing(self):
-        raise NotImplementedError
-    
-    def save_results():
-        raise NotImplementedError
+    def setup_paths(self): raise NotImplementedError
+    def setup_folders(self): raise NotImplementedError
+    def evaluate(self): raise NotImplementedError
 
