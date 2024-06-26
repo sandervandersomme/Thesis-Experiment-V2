@@ -5,73 +5,74 @@ from typing import List
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from src.utils import save_df_to_csv, save_matrix_to_np
 
 from src.eval.fidelity.methods_temporal_fidelity import similarity_auto_correlations, similarity_event_distributions, similarity_temporal_distances
 
 class TemporalFidelityEvaluator(Evaluator):
-    def __init__(self, eval_args, output_dir: str) -> None:
-        super().__init__(eval_args, output_dir)         
-        self.eval_dir = os.path.join(self.eval_dir, "temporal_fidelity/")
+    def __init__(self, syndata: torch.Tensor, eval_args, output_dir: str) -> None:
+        super().__init__(syndata, eval_args, output_dir)         
 
-        self.total_results_event_distributions = []
-        self.total_results_temporal_distances = []
-        self.total_results_autocorrelations = []
+    def setup_paths(self):
+        # Set root directory
+        self.eval_dir = os.path.join(self.eval_dir, f"temporal/{self.eval_args.model_type}")
 
-    def evaluate(self, files: List[str]):
+        # Set filename
+        self.filename = f"{self.eval_args.model_id}_{self.eval_args.syndata_id}"
+
+        # Set paths to dirs
+        self.path_scores = os.path.join(self.eval_dir, f"scores/")
+        self.path_distributions = os.path.join(self.eval_dir, f"sim_event_distributions/")
+        self.path_distances = os.path.join(self.eval_dir, f"sim_temporal_distances/")
+        self.path_autocorr = os.path.join(self.eval_dir, f"sim_autocorrelations/")
+
+    def setup_folders(self):
+        # Create dirs
+        os.makedirs(self.path_scores, exist_ok=True)
+        os.makedirs(self.path_distributions, exist_ok=True)
+        os.makedirs(self.path_distances, exist_ok=True)
+        os.makedirs(self.path_autocorr, exist_ok=True)
+        
+    def evaluate(self):
         print(f"Start temporal fidelity evaluation of model {self.eval_args.model_type}..")
-        return super().evaluate(files)
 
-    def _evaluate_dataset(self, syndata: torch.Tensor):
-        self.total_results_event_distributions.append(similarity_event_distributions(self.eval_args.real_data.sequences, syndata))
-        self.total_results_temporal_distances.append(similarity_temporal_distances(self.eval_args.real_data.sequences, syndata))
-        self.total_results_autocorrelations.append(similarity_auto_correlations(self.eval_args.real_data.sequences, syndata, self.eval_args.columns))
+        # Create dataframe
+        scores = pd.DataFrame()
+        scores["Model"] = pd.Series(self.eval_args.model_type)
+        scores["Sim. Score Event Distributions"] = self.evaluate_event_distributions()
+        scores["Sim. Score Temporal Distances"] = self.evaluate_temporal_distances()
+        scores["Sim. Score Autocorrelations"] = self.evaluate_auto_correlations()
 
-    def _post_processing(self):
-        print("Post-processing temporal fidelity results")
-        unzipped_distances_distributions = zip(*self.total_results_event_distributions)
-        unzipped_temporal_distances = zip(*self.total_results_temporal_distances)
-        unzipped_correlations = zip(*self.total_results_autocorrelations)
-        distances_event_distributions, distances_per_variable = map(list, unzipped_distances_distributions)
-        sim_scores_distances, sim_matrices_distances = map(list, unzipped_temporal_distances)
-        sim_scores_correlations, sim_matrices_correlations = map(list, unzipped_correlations)
+        # # Store metric scores
+        path = os.path.join(self.path_scores, self.filename)
+        save_df_to_csv(scores, path)
+        
+    def evaluate_event_distributions(self):
+        print("Evaluating event distributions")
+        avg_distance, var_distances = similarity_event_distributions(self.eval_args.real_data.sequences, self.syndata)
 
-        # Save non-averaged results to dataframe
-        non_avg_scores_df = pd.DataFrame()
-        non_avg_scores_df['Similarity Score event distributions'] = pd.Series(distances_event_distributions)
-        non_avg_scores_df['Temporal Distance Score'] = pd.Series(sim_scores_distances)
-        non_avg_scores_df['Autocorrelation Score'] = pd.Series(sim_scores_correlations)
+        var_distances_df = pd.Series(var_distances).to_frame().T
+        path = os.path.join(self.path_distributions, self.filename)
+        save_df_to_csv(var_distances_df, path)
 
-        # Calculate averages
-        avg_matrix_distances = sum(sim_matrices_distances) / len(sim_matrices_distances)
-        avg_matrix_correlations = sum(sim_matrices_correlations) / len(sim_matrices_correlations)
+        return pd.Series(avg_distance)
+    
+    def evaluate_temporal_distances(self):
+        print(f"Evaluating temporal distances..")
+        sim_score, matrix = similarity_temporal_distances(self.eval_args.real_data.sequences, self.syndata)
+        
+        # Storing matrices
+        path = os.path.join(self.path_distances, self.filename)
+        save_matrix_to_np(matrix, path)
 
-        # Create DataFrame for avg_statistics_per_variable
-        avg_distances_event_distributions_per_variable = pd.DataFrame(distances_per_variable)
+        return pd.Series(sim_score)
 
-        # Convert avg_statistics_per_variable table to LaTeX and save to file
-        latex_table = avg_distances_event_distributions_per_variable.to_latex(index=False)
-        with open(f'{self.eval_dir}/{self.eval_args.model_type}_distances_temp_distributions_per_var.tex', 'w') as f:
-            f.write(latex_table)
+    def evaluate_auto_correlations(self):
+        print(f"Evaluating autocorrelations..")
+        sim_score, matrix = similarity_auto_correlations(self.eval_args.real_data.sequences, self.syndata, self.eval_args.columns)
+        
+        # Storing matrices
+        path = os.path.join(self.path_autocorr, self.filename)
+        save_matrix_to_np(matrix, path)
 
-        # Convert avg_statistics_per_variable table to Markdown and save to file
-        markdown_table = avg_distances_event_distributions_per_variable.to_markdown(index=False)
-        with open(f'{self.eval_dir}/{self.eval_args.model_type}_distances_temp_distributions_per_var.md', 'w') as f:
-            f.write(markdown_table)
-
-        # Visualize avg temporal distance matrix
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(avg_matrix_distances, annot=True, cmap='coolwarm')
-        plt.title('Average Correlation Matrix')
-        plot_path = f'{self.eval_dir}/{self.eval_args.model_type}_heatmap_temporal_distances.png'
-        plt.savefig(plot_path)
-        plt.close()
-
-        # Visualize avg autocorrelation matrix
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(avg_matrix_correlations, annot=True, cmap='coolwarm')
-        plt.title('Average Correlation Matrix')
-        plot_path = f'{self.eval_dir}/{self.eval_args.model_type}_heatmap_autocorrelations.png'
-        plt.savefig(plot_path)
-        plt.close()
-
-        return non_avg_scores_df
+        return pd.Series(sim_score)
