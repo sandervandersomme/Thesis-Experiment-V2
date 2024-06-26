@@ -87,14 +87,10 @@ def load_model(path):
             return pickle.load(f)
 
 def load_syndata(path):
-    if os.path.exists(path):
-        return torch.load(path)
+    if os.path.exists(path): return torch.load(path)
 
-def save_df_to_csv(df: pd.DataFrame, path: str):
-    df.to_csv(f'{path}.csv', index=False)
-
-def save_matrix_to_np(matrix: np.ndarray, path: str):
-    np.save(path, matrix)
+def save_df_to_csv(df: pd.DataFrame, path: str): df.to_csv(f'{path}.csv', index=False)
+def save_matrix_to_np(matrix: np.ndarray, path: str): np.save(path, matrix)
 
 def save_df_to_latex(df: pd.DataFrame, path: str):
     # Save to LaTeX
@@ -105,3 +101,5 @@ def save_df_to_markdown(df: pd.DataFrame, path: str):
     # Save to Markdown
     with open(f"{path}.md", 'w') as f:
         f.write(df.to_markdown(index=False))
+
+def get_csv_files(dir:str): return [file for file in os.listdir(dir) if file.endswith('.csv')]
