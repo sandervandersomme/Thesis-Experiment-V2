@@ -42,7 +42,7 @@ class PrivacyEvaluator(Evaluator):
         scores = pd.concat([scores, self.evaluate_mia_w(train_data, test_data)], axis=1)
         scores = pd.concat([scores, self.evaluate_mia_b(train_data, test_data)], axis=1)
         scores = pd.concat([scores, self.evaluate_aia(train_data)], axis=1)
-        scores = pd.concat([scores, self.evaluate_reid(train_data)], axis=1)
+        # scores = pd.concat([scores, self.evaluate_reid(train_data)], axis=1)
 
         # # Store metric scores
         path = os.path.join(self.path_scores, self.filename)
