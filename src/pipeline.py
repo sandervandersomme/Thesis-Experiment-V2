@@ -14,6 +14,7 @@ from src.training.tuning import GenTuner, DownstreamTuner
 
 # Evaluation imports
 from src.eval.collector import Collector
+from src.eval.postprocessor import PostProcessor
 
 class Pipeline:
     def __init__(self, args):
@@ -66,6 +67,10 @@ class Pipeline:
         if self.args.flag_evaluation:
             print("Start evaluation..")
             self.evaluate_models()
+
+        if self.args.flag_postprocessing:
+            print("Start postprocessing the results")
+            self.post_process_results()
 
     def tune_gen_models(self):
         for model in self.args.models:
@@ -136,6 +141,10 @@ class Pipeline:
 
         collector = Collector(self.args.criteria, self.args.models, args.num_instances, args.num_syn_datasets, self.args, self.output_path)
         collector.collect_results()
+    
+    def post_process_results(self):
+        pp = PostProcessor(self.args.criteria, self.args.models, self.EVAL_DIR)
+        pp.run()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -148,6 +157,7 @@ if __name__ == "__main__":
     parser.add_argument("--flag_training", action="store_true")
     parser.add_argument("--flag_generation", action="store_true")
     parser.add_argument("--flag_evaluation", action="store_true")
+    parser.add_argument("--flag_postprocessing", action="store_true")
     parser.add_argument("--output_folder", type=str, required=True)
     parser.add_argument("--split_size", default=0.7)
     parser.add_argument("--val_split_size", default=0.15)
