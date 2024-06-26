@@ -4,6 +4,7 @@ import numpy as np
 import json
 import os
 import pickle
+import pandas as pd
 
 HOSPITAL_COLS = ['DIABETES', 'LIVER_DISEASE', 'PANCREAS', 'PSEUDOMONAS', 
                  'EMERGENCY', 'NEBULIZED', 'ORAL', 'KAFTRIO', 'SYMKEVI', 
@@ -80,19 +81,17 @@ def calculate_split_lengths(dataset, train_size: 0.8):
     train_samples = int(len(dataset) * train_size)
     return [train_samples, len(dataset)-train_samples]
 
-def load_model(dir, filename):
-    path = os.path.join(dir, filename)
+def load_model(path):
     if os.path.exists(path):
         with open(path, 'rb') as f:
             return pickle.load(f)
 
-def load_dataset(dir, filename):
-    path = os.path.join(dir, filename)
+def load_syndata(path):
     if os.path.exists(path):
         return torch.load(path)
-        
-def get_filenames_of_models(model_type, num_instances):
-    return [f"{model_type}-{model_id}.pkl" for model_id in range(num_instances)]
 
-def get_filenames_of_syndatasets(model_type: str, num_instances: int, num_datasets: int):
-    return [f"{model_type}-{model_id}-{data_id}.pt" for model_id in range(num_instances) for data_id in range(num_datasets)]
+def save_df_to_csv(df: pd.DataFrame, path: str):
+    df.to_csv(f'{path}.csv', index=False)
+
+def save_matrix_to_np(matrix: np.ndarray, path: str):
+    np.save(path, matrix)
