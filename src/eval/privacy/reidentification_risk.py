@@ -41,8 +41,8 @@ def reidentification_risk(syndata: torch.Tensor, train_data: torch.Tensor, dtw_t
         auc_roc = roc_auc_score(labels_np, inferred_membership_np)
 
     return {
-        "precision": precision, 
-        "recall": recall, 
-        "mse": mse, 
-        "auc_roc": auc_roc 
+        "Reid. Precision": precision, 
+        "Reid. Recall": recall, 
+        "Reid. MSE": mse, 
+        "Reid. AUC_ROC": auc_roc 
     }
