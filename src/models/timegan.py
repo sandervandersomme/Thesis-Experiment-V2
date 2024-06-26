@@ -80,6 +80,8 @@ class TimeGAN(GenModel):
         self.verbose = True
 
     def generate_data(self, num_samples: int) -> torch.Tensor:
+        print(f"Generating {num_samples} samples")
+
         noise = self.generate_noise(num_samples)
         with torch.no_grad():
             generated_embeddings = self.generator(noise)
