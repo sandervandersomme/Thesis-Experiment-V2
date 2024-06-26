@@ -55,9 +55,3 @@ class DownstreamDataset(Dataset):
 
     def __getitem__(self, index):
         return self.sequences[index], self.targets[index]
-
-if __name__ == "__main__":
-    cf = CF()
-
-    from src.data.data_processing import split
-    train_sequences, test_sequences = split(cf, 0.7)

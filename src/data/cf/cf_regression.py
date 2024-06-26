@@ -1,4 +1,4 @@
-from src.data.cf import DownstreamDataset
+from src.data.cf.cf import DownstreamDataset
 import torch
 from typing import List
 

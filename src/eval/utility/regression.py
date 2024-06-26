@@ -1,7 +1,7 @@
 from src.models.regressor import TimeseriesRegressor
 from src.models.models import train_regressor
 from torch.utils.data import Dataset
-from src.data.cf_classification import DownstreamDataset
+from src.data.cf.cf_classification import DownstreamDataset
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import torch
 import numpy as np

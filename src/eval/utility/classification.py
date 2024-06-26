@@ -1,7 +1,7 @@
 from src.models.classifier import TimeseriesClassifier
 from src.models.models import train_classifier
 from torch.utils.data import Dataset
-from src.data.cf_classification import DownstreamDataset
+from src.data.cf.cf_classification import DownstreamDataset
 from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_score, roc_auc_score, confusion_matrix
 import torch
 import numpy as np
