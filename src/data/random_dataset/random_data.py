@@ -4,6 +4,7 @@ from torch.utils.data import Dataset
 class RandomDataset(Dataset):
     def __init__(self, num_sequences=20, num_events=4, num_features=20):
         self.sequences = torch.rand(num_sequences, num_events, num_features)
+        self.columns = [f"Column #{id}" for id in range(num_features)]
 
     def __len__(self):
         return len(self.sequences)
