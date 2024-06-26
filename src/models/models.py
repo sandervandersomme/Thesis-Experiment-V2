@@ -20,11 +20,11 @@ def train_gen_model(model, train_data: torch.Tensor, epochs:int, log_loss_dir: s
 
     raise NotImplementedError
     
-def train_downstream_model(model, train_data: torch.Tensor, epochs:int, val_data: torch.Tensor=None, log_loss_dir: str=None):
+def train_downstream_model(model, train_data: torch.Tensor, epochs:int, val_data: torch.Tensor=None, log_loss_dir: str=None, verbose=True):
     if isinstance(model, TimeseriesClassifier):
-        return train_classifier(model, train_data, val_data, epochs, log_loss_dir)
+        return train_classifier(model, train_data, val_data, epochs, log_loss_dir, verbose)
     elif isinstance(model, TimeseriesRegressor):
-        return train_regressor(model, train_data, val_data, epochs, log_loss_dir) 
+        return train_regressor(model, train_data, val_data, epochs, log_loss_dir, verbose) 
 
     raise NotImplementedError
     
