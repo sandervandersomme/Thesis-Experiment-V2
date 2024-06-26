@@ -11,14 +11,11 @@ def regression_scores(real_train_data: DownstreamDataset, syndata: DownstreamDat
     train_data, val_data = split(real_train_data, val_split_size, seed)
     
     print("Training regression model on real data")
-    predictions_on_real = run_regressor(train_data, val_data, test_data, epochs, hyperparams)
+    predictions_on_real = run_regressor(train_data, val_data, test_data, epochs, hyperparams).cpu().numpy()
     print("Training regression model on synthetic data")
-    predictions_on_syn = run_regressor(syndata, val_data, test_data, epochs, hyperparams)
-    true_labels = test_data.targets.numpy()
-
-    predictions_on_real = predictions_on_real.numpy()  # Ensure predictions are NumPy arrays
-    predictions_on_syn = predictions_on_syn.numpy()
-
+    predictions_on_syn = run_regressor(syndata, val_data, test_data, epochs, hyperparams).cpu().numpy()
+    true_labels = test_data.targets.cpu().numpy()
+    
     raw_results = {
         'MAE_Real': mean_absolute_error(true_labels, predictions_on_real),
         'MAE_Synthetic': mean_absolute_error(true_labels, predictions_on_syn),

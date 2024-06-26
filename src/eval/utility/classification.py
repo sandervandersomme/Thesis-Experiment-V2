@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score, precision_score, f1_score, recall_sc
 import torch
 import numpy as np
 from src.data.data_processing import split
+from src.utils import set_device
 
 def classification_scores(real_train_data: DownstreamDataset, syndata: DownstreamDataset, test_data: DownstreamDataset, epochs: int, hyperparams: dict, val_split_size: float, seed):
     test_labels, testcounts = torch.unique(test_data.targets, return_counts=True)
@@ -15,15 +16,15 @@ def classification_scores(real_train_data: DownstreamDataset, syndata: Downstrea
     train_data, val_data = split(real_train_data, val_split_size, seed)
     
     print("Training classification model on real data")
-    predictions_on_real = run_classifier(train_data, val_data, test_data, epochs, hyperparams, val_split_size)
+    predictions_on_real = run_classifier(train_data, val_data, test_data, epochs, hyperparams, val_split_size).cpu().numpy()
     print("Training classification model on synthetic data")
-    predictions_on_syn = run_classifier(syndata, val_data, test_data, epochs, hyperparams, val_split_size)
-    true_labels = test_data.targets
+    predictions_on_syn = run_classifier(syndata, val_data, test_data, epochs, hyperparams, val_split_size).cpu().numpy()
+    true_labels = test_data.targets.cpu().numpy()
 
     raw_results = {
-        "train_counts": (train_labels, testcounts),
-        "test_counts": (test_labels, testcounts),
-        "syn_counts": (syn_labels, syncounts),
+        # "train_counts": (train_labels, testcounts),
+        # "test_counts": (test_labels, testcounts),
+        # "syn_counts": (syn_labels, syncounts),
         "accuracy_real": accuracy_score(true_labels, predictions_on_real),
         "accuracy_synthetic": accuracy_score(true_labels, predictions_on_syn),
         "precision_real": precision_score(true_labels, predictions_on_real, zero_division=0),
