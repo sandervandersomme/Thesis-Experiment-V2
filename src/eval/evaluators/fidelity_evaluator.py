@@ -1,69 +1,74 @@
-import torch
 from src.eval.evaluators.evaluator import Evaluator
 from src.eval.fidelity.methods_fidelity import similarity_of_statistics, wasserstein_distance, similarity_of_correlations
-from typing import List
+from src.utils import save_df_to_csv, save_matrix_to_np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 
 class FidelityEvaluator(Evaluator):
     def __init__(self, eval_args, output_dir: str) -> None:
         super().__init__(eval_args, output_dir)
-         
-        self.eval_dir = os.path.join(self.eval_dir, "fidelity/")
-        self.all_statistics = []
-        self.all_correlations = []
-        self.all_distances = []
 
-    def evaluate(self, files: List[str]):
-        print(f"Start fidelity evaluation of model {self.eval_args.model_type}..")
-        return super().evaluate(files)
+    def setup_paths(self):
+        # Set root directory
+        self.eval_dir = os.path.join(self.eval_dir, f"fidelity/{self.eval_args.model_type}")
 
-    def _evaluate_dataset(self, syndata: torch.Tensor):
-        results_statistics = similarity_of_statistics(self.eval_args.real_data.sequences, syndata, self.eval_args.columns)
-        results_correlations = similarity_of_correlations(self.eval_args.real_data.sequences, syndata)
-        results_distances = wasserstein_distance(self.eval_args.real_data.sequences, syndata, self.eval_args.columns)
+        # Set filename
+        self.filename = f"{self.eval_args.model_id}_{self.eval_args.syndata_id}"
 
-        self.all_statistics.append(results_statistics)
-        self.all_correlations.append(results_correlations)
-        self.all_distances.append(results_distances)
+        # Set paths to dirs
+        self.path_scores = os.path.join(self.eval_dir, f"scores/")
+        self.path_varstats = os.path.join(self.eval_dir, f"stats_per_var/")
+        self.path_corrs = os.path.join(self.eval_dir, f"correlations/")
 
-    def _post_processing(self):
-        unzipped_statistics = zip(*self.all_statistics)
-        statistics, statistics_per_variable = map(list, unzipped_statistics)
-        unzipped_correlations = zip(*self.all_correlations)
-        correlation_scores, correlation_matrices = map(list, unzipped_correlations)
-
-        # Save non-averaged results to dataframe
-        non_avg_scores_df = pd.DataFrame(statistics)
-        non_avg_scores_df['Correlation Score'] = pd.Series(correlation_scores)
-        non_avg_scores_df['Distance Score'] = pd.Series(self.all_distances)
-
-        # Calculate averages
-        avg_statistics_per_variable = sum(statistics_per_variable)/len(statistics_per_variable)
-        avg_correlation_matrix = sum(correlation_matrices)/len(correlation_matrices)
+    def setup_folders(self):
+        # Create dirs
+        os.makedirs(self.path_scores, exist_ok=True)
+        os.makedirs(self.path_varstats, exist_ok=True)
+        os.makedirs(self.path_corrs, exist_ok=True)
         
-        # Create DataFrame for avg_statistics_per_variable
-        avg_statistics_df = pd.DataFrame(avg_statistics_per_variable)
+    def evaluate(self):
+        print(f"Start fidelity evaluation of model {self.eval_args.model_type}..")
 
-        # Convert avg_statistics_per_variable table to LaTeX and save to file
-        latex_table = avg_statistics_df.to_latex(index=False)
-        with open(f'{self.eval_dir}/{self.eval_args.model_type}_non_avg_statistics.tex', 'w') as f:
-            f.write(latex_table)
+        # Create dataframe
+        scores = pd.DataFrame()
+        scores = pd.concat([scores, self.evaluate_basic_statistics().to_frame().T])
+        scores["Sim. Score Correlations"] = self.evaluate_correlations()
+        scores["Wasserstein Distance"] = self.evaluate_distances()
 
-        # Convert avg_statistics_per_variable table to Markdown and save to file
-        markdown_table = avg_statistics_df.to_markdown(index=False)
-        with open(f'{self.eval_dir}/{self.eval_args.model_type}_non_avg_statistics.md', 'w') as f:
-            f.write(markdown_table)
+        # Add identifier
+        scores["Model"] = self.eval_args.model_type
 
-        # Visualize correlation matrix
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(avg_correlation_matrix, annot=True, cmap='coolwarm')
-        plt.title('Average Correlation Matrix')
-        plot_path = f'{self.eval_dir}/{self.eval_args.model_type}_heatmap_correlations.png'
-        plt.savefig(plot_path)
-        plt.close()
+        # Store metric scores
+        path = os.path.join(self.path_scores, self.filename)
+        save_df_to_csv(scores, path)
+        
+    def evaluate_basic_statistics(self):
+        print(f"Evaluating basic statistics..")
+        similarity_scores_per_variable = similarity_of_statistics(self.eval_args.real_data.sequences, self.syndata, self.eval_args.columns)
 
-        return non_avg_scores_df
+        # Store all similarities of all variables of current dataset
+        path = os.path.join(self.path_varstats, self.filename)
+        save_df_to_csv(similarity_scores_per_variable, path)
+
+        # Compute average similarity scores
+        similarity_scores = similarity_scores_per_variable.mean(axis=0)
+        return similarity_scores
+
+    def evaluate_correlations(self):
+        print(f"Evaluating correlations..")
+        similarity_score, matrix = similarity_of_correlations(self.eval_args.real_data.sequences, self.syndata)
+        
+        # Storing matrices
+        path = os.path.join(self.path_corrs, self.filename)
+        save_matrix_to_np(matrix, path)
+
+        return similarity_score
     
+    def evaluate_distances(self):
+        print(f"Evaluating distance..")
+
+        distance = wasserstein_distance(self.eval_args.real_data.sequences, self.syndata, self.eval_args.columns)
+        return distance
+
+# TODO: Visualise matrices
+# TODO: Take average table of stats per var across all models
