@@ -1,7 +1,6 @@
 import torch
 import os
 import pickle
-from typing import List
 import argparse
 
 # Data imports
@@ -70,13 +69,18 @@ class Pipeline:
 
     def tune_gen_models(self):
         for model in self.args.models:
-            tuner = GenTuner(self.train_data, self.args.dataset, self.args.seed, self.output_path)
-            tuner.tune(model, self.args.trials, self.args.folds, self.args.epochs)
+            if self.args.dataset == "random":
+                tuner = GenTuner(self.real_data, self.args.dataset, self.args.seed, self.output_path)
+            else:
+                tuner = GenTuner(self.real_data[self.train_indices], self.args.dataset, self.args.seed, self.output_path)
+            tuner.tune(model, self.args.trials, self.args.epochs)
 
     def tune_downstream_models(self):
         train_sequences = self.real_data[self.train_data.indices]
+
         for task in self.args.tasks:
-            train_data_downstream = create_downstream_data(self.args.dataset, task, train_sequences, self.real_data.columns)
+            if self.args.dataset == "random": train_data_downstream = create_downstream_data(self.args.dataset, task, None, None)
+            else: train_data_downstream = create_downstream_data(self.args.dataset, task, train_sequences, self.real_data.columns)
 
             tuner = DownstreamTuner(train_data_downstream, self.args.dataset, self.args.seed, self.output_path)
             model = task_to_model(task)
@@ -148,7 +152,7 @@ if __name__ == "__main__":
     parser.add_argument("--split_size", default=0.7)
     parser.add_argument("--val_split_size", default=0.15)
     parser.add_argument("--epochs", default=50, type=int)
-    parser.add_argument("--trials", default=10, type=int)
+    parser.add_argument("--trials", default=5, type=int)
     parser.add_argument("--folds", default=10, type=int)
     parser.add_argument("--num_instances", default=3, type=int)
     parser.add_argument("--num_syn_datasets", default=3, type=int)
