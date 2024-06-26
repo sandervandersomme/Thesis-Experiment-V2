@@ -22,7 +22,7 @@ def generate_random_data(n_sequence, n_events, n_features):
 
 def split(dataset: Dataset, split_size: float, seed: None):
     """Returns train and test sequences"""
-    generator = torch.Generator(device=set_device()).manual_seed(seed) if seed else None
+    generator = torch.Generator(device="cpu").manual_seed(seed) if seed else None
     train_size = int(len(dataset) * split_size)
     test_size = len(dataset) - train_size
     lengths = [train_size, test_size]
