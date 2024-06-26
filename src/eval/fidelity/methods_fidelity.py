@@ -9,28 +9,27 @@ import pandas as pd
 
 def similarity_of_statistics(real_data: torch.Tensor, syndata: torch.Tensor, columns: List[str]):
     # Convert tensors to correct shape
-    real_data = real_data.numpy().reshape(-1, real_data.shape[2])
-    syndata = syndata.numpy().reshape(-1, syndata.shape[2])
+    real_data = real_data.cpu().numpy().reshape(-1, real_data.shape[2])
+    syndata = syndata.cpu().numpy().reshape(-1, syndata.shape[2])
 
     metrics = ["mean", "std", "median", "var"] # Removed skewness and kurtosis
     methods = [np.mean, np.std, np.median, np.var]
     
     # Initialize a DataFrame to store similarities
-    similarity_matrix = pd.DataFrame(index=columns, columns=metrics)
+    stat_similarities_per_variable_df = pd.DataFrame(index=columns, columns=metrics)
     
     # Loop through statistic methods
     for method, metric in zip(methods, metrics):
 
         # Calculate differences and average difference in real and synthetic variable statistics
-        real_statistic = method(real_data, axis=0)
-        syn_statistic = method(syndata, axis=0)
-        similarities = 1 - np.abs((real_statistic - syn_statistic) / np.maximum(np.abs(real_statistic), np.abs(syn_statistic)))
+        real_statistics = method(real_data, axis=0)
+        syn_statistics = method(syndata, axis=0)
+        stat_similarities_per_variable = 1 - np.abs((real_statistics - syn_statistics) / np.maximum(np.abs(real_statistics), np.abs(syn_statistics)))
         
         # Update the DataFrame
-        similarity_matrix[metric] = similarities
+        stat_similarities_per_variable_df[metric] = stat_similarities_per_variable
 
-    avgs_statistics = similarity_matrix.mean()
-    return avgs_statistics, similarity_matrix
+    return stat_similarities_per_variable_df
 
 def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor):
     # Calculates the difference between correlation matrices of real and synthetic data 
@@ -38,8 +37,8 @@ def similarity_of_correlations(real_data: torch.Tensor, syndata: torch.Tensor):
 
     # Flatten the sequences into tabular format: (Events, number of features)
     num_features = real_data.size(2)
-    real_eventlog = real_data.numpy().reshape(-1, num_features)
-    synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
+    real_eventlog = real_data.cpu().numpy().reshape(-1, num_features)
+    synthetic_eventlog = syndata.cpu().numpy().reshape(-1, num_features)
     similarity_matrix, similarity_score = similarity_correlation_matrix(real_eventlog, synthetic_eventlog)
 
     return similarity_score, similarity_matrix
@@ -49,8 +48,8 @@ def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns
     Calculates the wasserstein distance between real and synthetic eventlogs
     """
     num_features = real_data.shape[2]
-    real_eventlog = real_data.numpy().reshape(-1, num_features)
-    synthetic_eventlog = syndata.numpy().reshape(-1, num_features)
+    real_eventlog = real_data.cpu().numpy().reshape(-1, num_features)
+    synthetic_eventlog = syndata.cpu().numpy().reshape(-1, num_features)
 
     cost_matrix = ot.dist(real_eventlog, synthetic_eventlog)
     distance = ot.emd2([], [], cost_matrix, numItermax=200000)
