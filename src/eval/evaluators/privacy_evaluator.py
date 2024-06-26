@@ -1,4 +1,5 @@
 from src.eval.evaluators.evaluator import Evaluator
+from src.utils import save_df_to_csv
 
 # Import privacy methods
 from src.eval.privacy.white_box_mia import mia_whitebox_attack
@@ -11,59 +12,58 @@ from typing import List
 import torch
 import pandas as pd
 
+
 class PrivacyEvaluator(Evaluator):
-    def __init__(self, eval_args, output_dir: str) -> None:
-        super().__init__(eval_args, output_dir)         
-        self.eval_dir = os.path.join(self.eval_dir, "privacy/")
+    def __init__(self, syndata: torch.Tensor, eval_args, output_dir: str) -> None:
+        super().__init__(syndata, eval_args, output_dir)         
 
-        self.all_mia_w_results = []
-        self.all_mia_b_results = []
-        self.all_aia_results = []
-        self.all_reid_risk = []
+    def setup_paths(self):
+        # Set root directory
+        self.eval_dir = os.path.join(self.eval_dir, f"privacy/{self.eval_args.model_type}")
 
-    def evaluate(self, files: List[str]):
+        # Set filename
+        self.filename = f"{self.eval_args.model_id}_{self.eval_args.syndata_id}"
+
+        # Set paths to dirs
+        self.path_scores = os.path.join(self.eval_dir, f"scores/")
+
+    def setup_folders(self):
+        # Create dirs
+        os.makedirs(self.path_scores, exist_ok=True)
+
+    def evaluate(self):
         print(f"Start privacy evaluation of model {self.eval_args.model_type}..")
-
-        return super().evaluate(files)
-
-    def _evaluate_dataset(self, syndata: torch.Tensor):
         train_data = self.eval_args.real_data[self.eval_args.train_data.indices]
         test_data = self.eval_args.real_data[self.eval_args.test_data.indices]
 
+        # Create dataframe
+        scores = pd.DataFrame()
+        scores["Model"] = pd.Series(self.eval_args.model_type)
+        scores = pd.concat([scores, self.evaluate_mia_w(train_data, test_data)], axis=1)
+        scores = pd.concat([scores, self.evaluate_mia_b(train_data, test_data)], axis=1)
+        scores = pd.concat([scores, self.evaluate_aia(train_data)], axis=1)
+        scores = pd.concat([scores, self.evaluate_reid(train_data)], axis=1)
+
+        # # Store metric scores
+        path = os.path.join(self.path_scores, self.filename)
+        save_df_to_csv(scores, path)
+
+    def evaluate_mia_w(self, train_data, test_data):
         print("Evaluating MIA whitebox attack..")
-        self.all_mia_w_results.append(mia_whitebox_attack(train_data, test_data, self.eval_args.model, self.eval_args.mia_threshold))
+        results = mia_whitebox_attack(train_data, test_data, self.eval_args.model, self.eval_args.mia_threshold)
+        return pd.Series(results)
+        
+    def evaluate_mia_b(self, train_data, test_data):
         print("Evaluating MIA blackbox attack..")
-        self.all_mia_b_results.append(mia_blackbox_attack(syndata, train_data, test_data, self.eval_args.model, self.eval_args.mia_threshold, self.eval_args.epochs))
+        results = mia_blackbox_attack(self.syndata, train_data, test_data, self.eval_args.model, self.eval_args.mia_threshold, self.eval_args.epochs)
+        return pd.Series(results)
+    
+    def evaluate_aia(self, train_data):
         print("Evaluating AIA..")
-        self.all_aia_results.append(attribute_disclosure_attack(syndata, train_data, self.eval_args.n_neighbors_privacy, self.eval_args.aia_threshold, self.eval_args.num_disclosed_attributes))
+        results = attribute_disclosure_attack(self.syndata, train_data, self.eval_args.n_neighbors_privacy, self.eval_args.aia_threshold, self.eval_args.num_disclosed_attributes)
+        return pd.Series(results)
+    
+    def evaluate_reid(self, train_data):
         print("Evaluating Reidentification risk..")
-        self.all_reid_risk.append(reidentification_risk(syndata, train_data, self.eval_args.dtw_threshold))
-
-    def _post_processing(self):
-        print("Post-processing classification results")
-
-        # Initialize dataframe
-        scores_df = pd.DataFrame()
-
-        # Process MIA Whitebox scores
-        scores_df["MIA White TPR"] = pd.Series([results["tpr"] for results in self.all_mia_w_results])
-        scores_df["MIA White FPR"] = pd.Series([results["fpr"] for results in self.all_mia_w_results])
-        scores_df["MIA White Accuracy"] = pd.Series([results["accuracy"] for results in self.all_mia_w_results])
-        scores_df["MIA White Balanced Accuracy Advantage"] = pd.Series([results["balanced_accuracy_advantage"] for results in self.all_mia_w_results])
-
-        # Process MIA Whitebox scores
-        scores_df["MIA Black TPR"] = pd.Series([results["tpr"] for results in self.all_mia_b_results])
-        scores_df["MIA Black FPR"] = pd.Series([results["fpr"] for results in self.all_mia_b_results])
-        scores_df["MIA Black Accuracy"] = pd.Series([results["accuracy"] for results in self.all_mia_b_results])
-        scores_df["MIA Black Balanced Accuracy Advantage"] = pd.Series([results["balanced_accuracy_advantage"] for results in self.all_mia_b_results])
-
-        # Process AIA scores
-        scores_df["MIA Black TPR"] = pd.Series(self.all_aia_results)
-
-        # Process Reidentification risk scores
-        scores_df["Reid. Precision"] = pd.Series([results["precision"] for results in self.all_reid_risk])
-        scores_df["Reid. Recall"] = pd.Series([results["recall"] for results in self.all_reid_risk])
-        scores_df["Reid. MSE"] = pd.Series([results["mse"] for results in self.all_reid_risk])
-        scores_df["Reid. AUC ROC"] = pd.Series([results["auc_roc"] for results in self.all_reid_risk])
-
-        return scores_df
+        results = reidentification_risk(self.syndata, train_data, self.eval_args.dtw_threshold)
+        return pd.Series(results)
