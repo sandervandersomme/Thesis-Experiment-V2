@@ -56,7 +56,7 @@ def wasserstein_distance(real_data: torch.Tensor, syndata: torch.Tensor, columns
 
     return distance
 
-def similarity_correlation_matrix(real_events: torch.Tensor, synthetic_events: torch.Tensor):
+def similarity_correlation_matrix(real_events: np.ndarray, synthetic_events: torch.Tensor):
     # Calculate the differences between real and synthetic correlation matrices
     corr_matrix_real = np.corrcoef(real_events, rowvar=False)
     corr_matrix_syn = np.corrcoef(synthetic_events, rowvar=False)

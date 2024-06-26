@@ -11,7 +11,7 @@ def embed_data(data: torch.Tensor, n_components=10):
     return torch.tensor(data_embedded), pca
 
 def transform_data(data, pca):
-    data_embedded = pca.transform(data)
+    data_embedded = pca.transform(data.cpu())
     return torch.tensor(data_embedded)
 
 def nearest_neighbors(data, n_neighbors=5):

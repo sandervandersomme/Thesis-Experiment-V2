@@ -8,8 +8,8 @@ def similarity_event_distributions(real_data: torch.Tensor, syndata: torch.Tenso
     """
     For each time-step, calculates the wasserstein distance between the real and synthetic time step
     """
-    real_data = real_data.numpy()
-    syndata = syndata.numpy()
+    real_data = real_data.cpu().numpy()
+    syndata = syndata.cpu().numpy()
 
     # Compute wasserstein distances between real and synthetic time-steps
     sequence_length = real_data.shape[1]
@@ -49,7 +49,7 @@ def temporal_distances(data: torch.Tensor):
     """
     Calculates the wasserstein distance matrix for each time-step pair within a dataset
     """
-    data = data.numpy()
+    data = data.cpu().numpy()
 
     # This function calculates the wasserstein distance matrix between time steps
 
@@ -100,7 +100,7 @@ def similarity_auto_correlations(real_data: torch.Tensor, syndata: torch.Tensor,
 
         synthetic_feature_events = syndata[:, :, feature_idx]
 
-        similarities_autocorrelations, similarity_score = similarity_correlation_matrix(real_feature_events, synthetic_feature_events)
+        similarities_autocorrelations, similarity_score = similarity_correlation_matrix(real_feature_events.cpu().numpy(), synthetic_feature_events.cpu().numpy())
 
         variable = columns[feature_idx]
         similarity_scores[variable] = similarity_score
