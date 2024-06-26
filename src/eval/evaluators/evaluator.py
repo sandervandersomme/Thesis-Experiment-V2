@@ -2,9 +2,10 @@ import os
 import torch
 
 class Evaluator():
-    def __init__(self, eval_args: str, output_dir) -> None:
+    def __init__(self, syndata: torch.Tensor, eval_args: str, output_dir: str) -> None:
         # Store syndata
         self.eval_args = eval_args
+        self.syndata = syndata
 
         # Setup dirs
         self.output_dir = output_dir
@@ -18,5 +19,5 @@ class Evaluator():
 
     def setup_paths(self): raise NotImplementedError
     def setup_folders(self): raise NotImplementedError
-    def evaluate(self): raise NotImplementedError
+    def evaluate(self, syndata: torch.Tensor): raise NotImplementedError
 

@@ -1,5 +1,6 @@
 from typing import List
 import os
+import torch
 from src.utils import load_model, load_syndata, save_df_to_csv
 
 # Import evaluators
@@ -48,8 +49,7 @@ class Collector():
                     syndata = load_syndata(path)
                     self.args.syndata_id = syndata_id
                     for criterion in self.criteria:
-                        evaluator = select_evaluator(criterion, self.args, self.output_dir)
-                        evaluator.syndata = syndata
+                        evaluator = select_evaluator(criterion, syndata, self.args, self.output_dir)
                         evaluator.evaluate()
         
         self.combine_results()
@@ -60,16 +60,16 @@ class Collector():
 
 
 
-def select_evaluator(criterion: str, args, output_dir: str):
+def select_evaluator(criterion: str, syndata: torch.Tensor, args, output_dir: str):
     if criterion == "fidelity":
-        return FidelityEvaluator(args, output_dir)
+        return FidelityEvaluator(syndata, args, output_dir)
     if criterion == "temporal":
-        return TemporalFidelityEvaluator(args, output_dir)
+        return TemporalFidelityEvaluator(syndata, args, output_dir)
     if criterion == "diversity":
-        return DiversityEvaluator(args, output_dir)
+        return DiversityEvaluator(syndata, args, output_dir)
     if criterion == "utility":
-        return UtilityEvaluator(args, output_dir)
+        return UtilityEvaluator(syndata, args, output_dir)
     if criterion == "privacy":
-        return PrivacyEvaluator(args, output_dir)
+        return PrivacyEvaluator(syndata, args, output_dir)
     
     raise NotImplementedError

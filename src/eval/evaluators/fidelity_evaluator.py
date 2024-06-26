@@ -3,10 +3,11 @@ from src.eval.fidelity.methods_fidelity import similarity_of_statistics, wassers
 from src.utils import save_df_to_csv, save_matrix_to_np
 import pandas as pd
 import os
+import torch
 
 class FidelityEvaluator(Evaluator):
-    def __init__(self, eval_args, output_dir: str) -> None:
-        super().__init__(eval_args, output_dir)
+    def __init__(self, syndata: torch.Tensor, eval_args, output_dir: str) -> None:
+        super().__init__(syndata, eval_args, output_dir)
 
     def setup_paths(self):
         # Set root directory
