@@ -51,9 +51,9 @@ class DiversityEvaluator(Evaluator):
         df = pd.DataFrame()
         df["Rel. Diversity Seq"] = pd.Series(rel_diversity_sequences)
         df["Rel. Coverage Seq"] = pd.Series(rel_coverage_sequences)
-        df["Intra Dist. Real Seq"] = pd.Series(intra_d_real_sequences)
-        df["Intra Dist. Syn. Seq"] = pd.Series(intra_d_syn_sequences)
-        df["Inter Dist. Seq"] = pd.Series(inter_d_sequences)
+        # df["Intra Dist. Real Seq"] = pd.Series(intra_d_real_sequences)
+        # df["Intra Dist. Syn. Seq"] = pd.Series(intra_d_syn_sequences)
+        # df["Inter Dist. Seq"] = pd.Series(inter_d_sequences)
 
         return df
 
@@ -68,10 +68,10 @@ class DiversityEvaluator(Evaluator):
             train_data, self.syndata, self.eval_args.n_components, self.eval_args.n_neighbors_diversity, self.eval_args.coverage_factor, "events")
 
         df = pd.DataFrame()
-        df["Rel. Diversity Seq"] = pd.Series(rel_diversity_events)
-        df["Rel. Coverage Seq"] = pd.Series(rel_coverage_events)
-        df["Intra Dist. Real Seq"] = pd.Series(intra_d_real_events)
-        df["Intra Dist. Syn. Seq"] = pd.Series(intra_d_syn_events)
-        df["Inter Dist. Seq"] = pd.Series(inter_d_events)
+        df["Rel. Diversity Events"] = pd.Series(rel_diversity_events)
+        df["Rel. Coverage Events"] = pd.Series(rel_coverage_events)
+        # df["Intra Dist. Real Seq"] = pd.Series(intra_d_real_events)
+        # df["Intra Dist. Syn. Seq"] = pd.Series(intra_d_syn_events)
+        # df["Inter Dist. Seq"] = pd.Series(inter_d_events)
 
         return df
