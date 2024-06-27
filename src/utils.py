@@ -89,17 +89,18 @@ def load_model(path):
 def load_syndata(path):
     if os.path.exists(path): return torch.load(path)
 
-def save_df_to_csv(df: pd.DataFrame, path: str): df.to_csv(f'{path}.csv', index=False)
+def save_df_to_csv(df: pd.DataFrame, path: str, index=False): df.to_csv(f'{path}.csv', index=index)
 def save_matrix_to_np(matrix: np.ndarray, path: str): np.save(path, matrix)
 
-def save_df_to_latex(df: pd.DataFrame, path: str):
+def save_df_to_latex(df: pd.DataFrame, path: str, index):
     # Save to LaTeX
     with open(f"{path}.tex", 'w') as f:
-        f.write(df.to_latex(index=False))
+        f.write(df.to_latex(index=index))
 
-def save_df_to_markdown(df: pd.DataFrame, path: str):
+def save_df_to_markdown(df: pd.DataFrame, path: str, index):
     # Save to Markdown
     with open(f"{path}.md", 'w') as f:
-        f.write(df.to_markdown(index=False))
+        f.write(df.to_markdown(index=index))
 
 def get_csv_files(dir:str): return [file for file in os.listdir(dir) if file.endswith('.csv')]
+def get_npy_files(dir:str): return [file for file in os.listdir(dir) if file.endswith('.npy')]
