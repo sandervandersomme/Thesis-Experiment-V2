@@ -25,15 +25,7 @@ def calc_distance(nn: NearestNeighbors, data):
     set_distance = torch.mean(torch.tensor(distances))
     return set_distance
 
-def calc_coverage(nn_synthetic, real_data_embedded, intra_set_distance: float, threshold_factor: float): 
-    distances_syn_to_real, _ = nn_synthetic.kneighbors(real_data_embedded)
-    
-    distance_threshold = intra_set_distance * threshold_factor
-
-    coverage = torch.mean((torch.tensor(distances_syn_to_real) <= distance_threshold).float())
-    return coverage.item()
-
-def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, threshold_factor: float, reshape_method: str="events"):
+def calculate_diversity_scores(train_data: torch.Tensor, syndata: torch.Tensor, n_components: int, n_neighbors: int, reshape_method: str="events"):
     if reshape_method == "sequences":
         train_data = flatten_into_sequences(train_data)
         syndata = flatten_into_sequences(syndata)
