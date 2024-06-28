@@ -134,6 +134,9 @@ class PostProcessor():
 
         # Concatenate criteria scores and save
         dir = os.path.join(self.dir_processed, f"full_scores/")
+        if os.path.isdir(dir):
+            os.rmdir(dir)
+
         full_criteria_scores = self.concatenate_criteria(dir)
         df_transposed = full_criteria_scores.set_index('Model').T.round(3)
         path = os.path.join(self.dir_processed, f"full_scores/full_scores")

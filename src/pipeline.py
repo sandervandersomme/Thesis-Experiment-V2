@@ -14,7 +14,7 @@ from src.training.tuning import GenTuner, DownstreamTuner
 
 # Evaluation imports
 from src.eval.collector import Collector
-from src.eval.postprocessor import PostProcessor
+from src.postprocessing.postprocessor import PostProcessor
 
 class Pipeline:
     def __init__(self, args):
