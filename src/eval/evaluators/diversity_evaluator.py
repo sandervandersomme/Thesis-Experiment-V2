@@ -46,7 +46,7 @@ class DiversityEvaluator(Evaluator):
         
         # Calculate metrics
         rel_coverage_sequences, rel_diversity_sequences, intra_d_syn_sequences, intra_d_real_sequences, inter_d_sequences = calculate_diversity_scores(
-            train_data, self.syndata, self.eval_args.n_components, self.eval_args.n_neighbors_diversity, self.eval_args.coverage_factor, "events")
+            train_data, self.syndata, self.eval_args.n_components, self.eval_args.n_neighbors_diversity, self.eval_args.coverage_factor, "sequences")
 
         df = pd.DataFrame()
         df["Rel. Diversity Seq"] = pd.Series(rel_diversity_sequences)
