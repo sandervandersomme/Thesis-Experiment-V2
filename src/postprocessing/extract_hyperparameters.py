@@ -7,7 +7,7 @@ import argparse
 def extract_parameters(dir):
     # Path to the folder containing the Optuna study files
     folder_path = f'outputs/{dir}/hyperparams/trials/'
-    save_path = f'outputs/{dir}/eval/optimalparams/'
+    save_path = f'outputs/{dir}/eval/processed/'
 
     # Dictionary to store the results
     all_results = pd.DataFrame()
@@ -32,9 +32,9 @@ def extract_parameters(dir):
 
             all_results = pd.concat([all_results, pd.Series(results).to_frame().T], axis=0)
 
-    all_results = all_results.transpose()
+    all_results = all_results.set_index("model").T
 
-    save_path = os.path.join(f'outputs/{dir}/eval/optimalparams/optimal_hyperparameters')
+    save_path = os.path.join(save_path, f'optimal_hyperparameters')
 
     # Save the DataFrame to a CSV file (if needed)
     all_results.to_csv(f'{save_path}.csv', index=True)
@@ -45,7 +45,7 @@ def extract_parameters(dir):
 
     # Save the DataFrame to a LaTeX file
     with open(f'{save_path}.tex', 'w') as f:
-        f.write(all_results.to_latex(index=True, ))
+        f.write(all_results.to_latex(index=True))
 
 
 if __name__ == "__main__":
