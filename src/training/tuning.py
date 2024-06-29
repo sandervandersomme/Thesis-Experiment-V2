@@ -39,7 +39,7 @@ class GenTuner(Tuner):
     
     def tune(self, model: str, trials: int, epochs: int):
         suffix = f"{self.name_data}-{model}-{self.seed}"
-        storage = optuna.storages.RDBStorage(url=f'sqlite:///{self.parameter_folder}trials/{suffix}.db')
+        storage = optuna.storages.RDBStorage(url=f'sqlite:///{self.parameter_folder}{suffix}.db')
 
         study = optuna.create_study(
             study_name=suffix,  
@@ -78,7 +78,7 @@ class DownstreamTuner(Tuner):
 
     def tune(self, model: str, trials: int, folds: int, epochs: int):
         suffix = f"{self.name_data}-{model}-{self.seed}"
-        storage = optuna.storages.RDBStorage(url=f'sqlite:///{self.parameter_folder}trials/{suffix}.db')
+        storage = optuna.storages.RDBStorage(url=f'sqlite:///{self.parameter_folder}{suffix}.db')
 
         study = optuna.create_study(
             study_name=suffix,  

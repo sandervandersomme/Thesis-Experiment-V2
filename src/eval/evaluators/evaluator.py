@@ -11,7 +11,7 @@ class Evaluator():
         self.output_dir = output_dir
         self.eval_dir = os.path.join(output_dir, "eval/")
         self.syn_data_dir = os.path.join(output_dir, "syndata/")
-        self.hyperparams_dir = os.path.join(output_dir, "hyperparams/trials/")
+        self.hyperparams_dir = os.path.join(output_dir, "hyperparams/")
 
         # Create folder structure
         self.setup_paths()
