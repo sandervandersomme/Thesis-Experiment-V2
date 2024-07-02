@@ -3,29 +3,35 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import shutil
 
 from src.utils import get_csv_files, save_df_to_csv, save_df_to_latex, save_df_to_markdown, get_npy_files
 
 class PostProcessor():
-    def __init__(self, criteria, models, dir: str) -> None:
-        self.dir = dir
-        self.dir_processed = os.path.join(self.dir, f"processed/")
+    def __init__(self, criteria, models, root_dir: str) -> None:
         self.criteria = criteria
         self.models = models
 
+        # Setup paths and folders
+        self.root_dir = root_dir
+        self.dir_eval = os.path.join(self.root_dir, f"eval/")
+        self.dir_results = os.path.join(self.root_dir, f"results/")
+        self.dir_avg_results = os.path.join(self.dir_results, f"avgs/")
+        self.dir_full_results = os.path.join(self.dir_results, f"full/")
         self.setup_folders()
 
     def setup_folders(self):
-        dir = os.path.join(self.dir_processed, f"avgs_scores/")
-        os.makedirs(dir, exist_ok=True)
+        # Reset folder
+        shutil.rmtree(self.dir_results)
+        os.makedirs(self.dir_results)
+        os.makedirs(self.dir_avg_results)
+        os.makedirs(self.dir_full_results)
+    
 
+        # Create folder for each criteria to store intermediate files
         for criterion in self.criteria:
             for model in self.models:
-                dir = os.path.join(self.dir_processed, f"full_scores/{criterion}/")
-                
-                os.makedirs(dir, exist_ok=True)
-
-                dir = os.path.join(self.dir_processed, f"{criterion}/")
+                dir = os.path.join(self.dir_results, f"{criterion}/")
                 os.makedirs(dir, exist_ok=True)
 
     def run(self):
@@ -42,6 +48,7 @@ class PostProcessor():
         self.process_scores()
         
         # Criteria-specific post-processing
+        print(f"Processing {self.criterion}..")
         if self.criterion == "fidelity":
             self.process_fidelity()
         elif self.criterion == "temporal":
@@ -55,97 +62,102 @@ class PostProcessor():
 
     def process_scores(self):
         print(f"Processing scores..")
-        dir = os.path.join(self.dir, f"{self.criterion}/{self.model}/scores/")
+        dir = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/scores/")
 
         # Combine and save scores of model
         scores = self.files_to_dataframe(dir)
-        path = os.path.join(self.dir_processed, f"full_scores/{self.criterion}/{self.model}")
+        path = os.path.join(self.dir_results, f"{self.criterion}/{self.model}")
         save_df_to_csv(scores, path)
 
     def process_fidelity(self): 
-        print(f"Processing {self.criterion}..")
-        stats_dir = os.path.join(self.dir, f"{self.criterion}/{self.model}/stats_per_var/")
-        corrs_dir = os.path.join(self.dir, f"{self.criterion}/{self.model}/correlations/")
+        # Input paths
+        stats_dir = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/stats_per_var/")
+        corrs_dir = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/correlations/")
         
-        # Combine and save stats of model
-        df = self.process_dataframe(stats_dir, "fidelity_full_stats")
+        # Output paths
+        stats_output_path = os.path.join(self.dir_results, f"{self.criterion}/stats/")
+        corrs_output_path = os.path.join(self.dir_results, f"{self.criterion}/corrs/")
+        os.makedirs(stats_output_path, exist_ok=True)
+        os.makedirs(corrs_output_path, exist_ok=True)
 
-        # Compute and save average scores of model
-        # path = os.path.join(self.processed_dir, f"{self.criterion}/{self.model}_fidelity_avg_stats")
-        # avg_stats = df.mean(axis=1)
-        # self.save_df_all_formats(avg_stats, path)
-
-        # Combine and save avg correlation matrix of model
-        self.process_matrix(corrs_dir, "fidelity_avg_matrix", "Average Variable Correlations")
+        df = self.process_dataframe(stats_dir, f"stats/{self.model}")
+        self.process_matrix(corrs_dir, f"corrs/{self.model}", "Average Variable Correlations")
 
     def process_temporal(self):
-        print(f"Processing {self.criterion}..")
-        dir_event_dist = os.path.join(self.dir, f"{self.criterion}/{self.model}/sim_event_distributions/")
-        dir_autocorr = os.path.join(self.dir, f"{self.criterion}/{self.model}/sim_autocorrelations/")
-        dir_temp_dist = os.path.join(self.dir, f"{self.criterion}/{self.model}/sim_temporal_distances/")
+        # Input paths
+        dir_event_dist = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/sim_event_distributions/")
+        dir_autocorr = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/sim_autocorrelations/")
+        dir_temp_dist = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/sim_temporal_distances/")
+        
+        # Output paths
+        stats_output_path = os.path.join(self.dir_results, f"{self.criterion}/ev_dist/")
+        corrs_output_path = os.path.join(self.dir_results, f"{self.criterion}/autocorr/")
+        dists_output_path = os.path.join(self.dir_results, f"{self.criterion}/tempdist/")
+        os.makedirs(stats_output_path, exist_ok=True)
+        os.makedirs(corrs_output_path, exist_ok=True)
+        os.makedirs(dists_output_path, exist_ok=True)
 
-        # Combine and save stats of model
-        self.process_dataframe(dir_event_dist, "full_results_sim_event_distributions")
-
-        # Combine and save avg autocorrelation matrix of model
-        self.process_matrix(dir_autocorr, "temporal_avg_temporal_distance_matrix", "Average Temporal Correlations")
-
-        # Combine and save avg temporal distance matrix of model
-        self.process_matrix(dir_temp_dist, "temporal_avg_temporal_correlation_matrix", "Average Temporal Distances")
+        self.process_dataframe(dir_event_dist, f"ev_dist/{self.model}")
+        self.process_matrix(dir_autocorr, f"autocorr/{self.model}", "Average Temporal Correlations")
+        self.process_matrix(dir_temp_dist, f"tempdist/{self.model}", "Average Temporal Distances")
 
     def process_diversity(self):
-        print(f"Processing {self.criterion}..")
         pass
     
     def process_utility(self): 
-        print(f"Processing {self.criterion}..")
-        dir_reg = os.path.join(self.dir, f"{self.criterion}/{self.model}/regression/")
-        dir_class_results = os.path.join(self.dir, f"{self.criterion}/{self.model}/classification/results/")
-        dir_class_conf_real = os.path.join(self.dir, f"{self.criterion}/{self.model}/classification/conf_matrices/real/")
-        dir_class_conf_syn = os.path.join(self.dir, f"{self.criterion}/{self.model}/classification/conf_matrices/syn/")
+        # Input paths
+        dir_reg = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/regression/")
+        dir_class_results = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/classification/results/")
+        dir_class_conf_real = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/classification/conf_matrices/real/")
+        dir_class_conf_syn = os.path.join(self.dir_eval, f"{self.criterion}/{self.model}/classification/conf_matrices/syn/")
 
-        # Combine and save full classification and regression results of model
-        self.process_dataframe(dir_reg, "full_results_classification")
-        self.process_dataframe(dir_class_results, "full_results_regression")
+        # Output paths
+        stats_output_path = os.path.join(self.dir_results, f"{self.criterion}/reg/")
+        class_output_path = os.path.join(self.dir_results, f"{self.criterion}/class/")
+        confr_output_path = os.path.join(self.dir_results, f"{self.criterion}/class_conf_real")
+        confs_output_path = os.path.join(self.dir_results, f"{self.criterion}/class_conf_syn")
+        os.makedirs(stats_output_path, exist_ok=True)
+        os.makedirs(class_output_path, exist_ok=True)
+        os.makedirs(confr_output_path, exist_ok=True)
+        os.makedirs(confs_output_path, exist_ok=True)
 
-        # Combine and save heatmaps of temporal correlations
-        self.process_matrix(dir_class_conf_real, "avg_class_conf_matrix_real", "Average confusion matrix on real data")
-        self.process_matrix(dir_class_conf_syn, "avg_class_conf_matrix_syn", "Average confusion matrix on synthetic data")
+        # Process data
+        self.process_dataframe(dir_reg, f"reg/{self.model}")
+        self.process_dataframe(dir_class_results, f"class/{self.model}")
+        self.process_matrix(dir_class_conf_real, f"class_conf_real/{self.model}", "Average confusion matrix on real data")
+        self.process_matrix(dir_class_conf_syn, f"class_conf_syn/{self.model}", "Average confusion matrix on synthetic data")
     
     def process_privacy(self):
-        print(f"Processing {self.criterion}..")
         pass
 
     def combine_scores(self):
         for criterion in self.criteria:
             for model in self.models:
-                dir = os.path.join(self.dir_processed, f"full_scores/{criterion}/")
+                dir = os.path.join(self.dir_results, f"{criterion}/")
                 full_scores = self.files_to_dataframe(dir)
 
                 # Store full scores
-                path = os.path.join(self.dir_processed, f"full_scores/full_scores_{criterion}")
+                path = os.path.join(self.dir_results, f"full/scores_{criterion}")
                 save_df_to_csv(full_scores, path)
 
                 # Store averages
                 avg_scores = full_scores.groupby('Model').mean().reset_index()
                 df_transposed = avg_scores.set_index('Model').T.round(3)
-                path = os.path.join(self.dir_processed, f"avgs_scores/avgs_scores_{criterion}")
-                self.save_df_all_formats(df_transposed, path, index=True)
+                path = os.path.join(self.dir_results, f"avgs/scores_{criterion}")
+                save_df_to_csv(df_transposed, path, index=True)
+            
+            shutil.rmtree(dir)
 
         # Concatenate criteria scores and save
-        dir = os.path.join(self.dir_processed, f"full_scores/")
-        if os.path.isdir(dir):
-            os.rmdir(dir)
-
-        full_criteria_scores = self.concatenate_criteria(dir)
+        full_criteria_scores = self.concatenate_criteria(self.dir_full_results)
         df_transposed = full_criteria_scores.set_index('Model').T.round(3)
-        path = os.path.join(self.dir_processed, f"full_scores/full_scores")
+        path = os.path.join(self.dir_full_results, f"all_scores")
         self.save_df_all_formats(df_transposed, path, index=True)
 
         # Compute average scores and save
         avg_scores = full_criteria_scores.groupby('Model').mean().reset_index()
         df_transposed = avg_scores.set_index('Model').T.round(3)
-        path = os.path.join(self.dir_processed, f"full_scores/avg_scores")
+        path = os.path.join(self.dir_avg_results, f"all_avg_scores")
         self.save_df_all_formats(df_transposed, path, index=True)
 
     def concatenate_criteria(self, dir):
@@ -192,13 +204,13 @@ class PostProcessor():
     def process_matrix(self, dir, filename, title):
         # Combine and save matrix
         matrix = self.files_to_matrix(dir)
-        path = os.path.join(self.dir_processed, f"{self.criterion}/{self.model}_{filename}")
+        path = os.path.join(self.dir_results, f"{self.criterion}/{filename}")
         self.visualize_matrix(matrix, title, path)
     
     def process_dataframe(self, dir, filename):
         # Combine and save dataframe
         df = self.files_to_dataframe(dir)
-        path = os.path.join(self.dir_processed, f"{self.criterion}/{self.model}_{filename}")
+        path = os.path.join(self.dir_results, f"{self.criterion}/{filename}")
         self.save_df_all_formats(df, path)
         return df
 
