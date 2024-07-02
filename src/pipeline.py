@@ -19,21 +19,21 @@ from src.postprocessing.postprocessor import PostProcessor
 class Pipeline:
     def __init__(self, args):
         self.args = args
+
+        self.ROOT_DIR = f"outputs/{self.args.output_folder}/"
+        self.HYPERPARAM_DIR = os.path.join(self.ROOT_DIR, f"hyperparams/")
+        self.MODEL_DIR = os.path.join(self.ROOT_DIR, f"models/")
+        self.SYNDATA_DIR = os.path.join(self.ROOT_DIR, f"syndata/")
+        self.EVAL_DIR = os.path.join(self.ROOT_DIR, f"eval/")
         self.setup_folders()
         self.setup_data()
-        self.HYPERPARAM_DIR = f"{self.output_path}hyperparams/trials/"
-        self.MODEL_DIR = f"{self.output_path}models/"
-        self.SYNDATA_DIR = f"{self.output_path}syndata/"
-        self.EVAL_DIR = f"{self.output_path}eval/"
 
     def setup_folders(self):
         print("Setting up project folder structure...")
-        self.output_path = f"outputs/{self.args.output_folder}/"
-        os.makedirs(f"{self.output_path}syndata", exist_ok=True)
-        os.makedirs(f"{self.output_path}hyperparams/trials/", exist_ok=True)
-        os.makedirs(f"{self.output_path}eval", exist_ok=True)
-        os.makedirs(f"{self.output_path}losses", exist_ok=True)
-        os.makedirs(f"{self.output_path}models", exist_ok=True)
+        os.makedirs(self.HYPERPARAM_DIR, exist_ok=True)
+        os.makedirs(self.MODEL_DIR, exist_ok=True)
+        os.makedirs(self.SYNDATA_DIR, exist_ok=True)
+        os.makedirs(self.EVAL_DIR, exist_ok=True)
 
     def setup_data(self):
         print("Setting up data")
@@ -143,7 +143,7 @@ class Pipeline:
         collector.collect_results()
     
     def post_process_results(self):
-        pp = PostProcessor(self.args.criteria, self.args.models, self.EVAL_DIR)
+        pp = PostProcessor(self.args.criteria, self.args.models, self.ROOT_DIR)
         pp.run()
 
 if __name__ == "__main__":
