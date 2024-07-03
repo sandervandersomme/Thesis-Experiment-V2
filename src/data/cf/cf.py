@@ -3,7 +3,6 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset
 import torch
 import pandas as pd
-import numpy as np
 
 from src.paths import PATH_CF_165, PATH_CF_184
 
