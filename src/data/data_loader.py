@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from src.data.cf.cf import CF
+from src.data.sepsis.sepsis import Sepsis
 from torch.utils.data import Dataset
 from src.data.cf.cf_classification import create_cf_classification_data
 from src.data.cf.cf_regression import create_cf_regression_data
@@ -15,6 +16,8 @@ def select_data(dataset: str) -> Dataset:
     "select and load dataset"
     if dataset == "cf":
         return CF()
+    if dataset == "sepsis":
+        return Sepsis()
     if dataset == "random":
         return RandomDataset()
 
