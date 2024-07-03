@@ -9,18 +9,18 @@ from src.training.hyperparameters import get_gen_grid, get_downstream_grid
 from src.models.models import train_gen_model, train_downstream_model, load_gen_model, load_downstream_model
 
 class Tuner:
-    def __init__(self, dataset: Dataset, name_data: str, seed: int, exp_dir: str):
+    def __init__(self, dataset: Dataset, name_data: str, seed: int, dir: str):
         self.name_data = name_data
         self.dataset = dataset
         self.seed = seed
-        self.parameter_folder = exp_dir + "hyperparams/"
+        self.parameter_folder = dir
 
     def tune(self):
         raise NotImplementedError
 
 class GenTuner(Tuner):
-    def __init__(self, dataset: Dataset, name_data: str, seed: int, exp_dir: str):
-        super().__init__(dataset, name_data, seed, exp_dir)
+    def __init__(self, dataset: Dataset, name_data: str, seed: int, dir: str):
+        super().__init__(dataset, name_data, seed, dir)
 
     def objective(self, trial, model_class: str, epochs: int):
         self.shape = (len(self.dataset), *self.dataset[0].shape)
@@ -52,8 +52,8 @@ class GenTuner(Tuner):
 
 
 class DownstreamTuner(Tuner):
-    def __init__(self, dataset: Dataset, name_data: str, seed: int, exp_dir: str):
-        super().__init__(dataset, name_data, seed, exp_dir)
+    def __init__(self, dataset: Dataset, name_data: str, seed: int, dir: str):
+        super().__init__(dataset, name_data, seed, dir)
 
     def objective(self, trial, model_class: str, folds: int, epochs: int):
         hyperparams = get_downstream_grid(model_class, trial, self.dataset.sequences.shape)

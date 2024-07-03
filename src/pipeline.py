@@ -20,13 +20,21 @@ class Pipeline:
     def __init__(self, args):
         self.args = args
 
-        self.ROOT_DIR = f"outputs/{self.args.output_folder}/"
+        self.setup_paths()
+        self.setup_folders()
+        self.setup_data()
+
+    def setup_paths(self):
+        if self.args.output_folder is None: 
+            self.ROOT_DIR = f"outputs/{self.args.dataset}/"
+        else: 
+            self.ROOT_DIR = f"outputs/{self.args.output_folder}/"
+
         self.HYPERPARAM_DIR = os.path.join(self.ROOT_DIR, f"hyperparams/")
         self.MODEL_DIR = os.path.join(self.ROOT_DIR, f"models/")
         self.SYNDATA_DIR = os.path.join(self.ROOT_DIR, f"syndata/")
         self.EVAL_DIR = os.path.join(self.ROOT_DIR, f"eval/")
-        self.setup_folders()
-        self.setup_data()
+
 
     def setup_folders(self):
         print("Setting up project folder structure...")
@@ -75,9 +83,9 @@ class Pipeline:
     def tune_gen_models(self):
         for model in self.args.models:
             if self.args.dataset == "random":
-                tuner = GenTuner(self.real_data, self.args.dataset, self.args.seed, self.output_path)
+                tuner = GenTuner(self.real_data, self.args.dataset, self.args.seed, self.HYPERPARAM_DIR)
             else:
-                tuner = GenTuner(self.real_data[self.train_indices], self.args.dataset, self.args.seed, self.output_path)
+                tuner = GenTuner(self.real_data[self.train_indices], self.args.dataset, self.args.seed, self.HYPERPARAM_DIR)
             tuner.tune(model, self.args.trials, self.args.epochs)
 
     def tune_downstream_models(self):
@@ -87,7 +95,7 @@ class Pipeline:
             if self.args.dataset == "random": train_data_downstream = create_downstream_data(self.args.dataset, task, None, None)
             else: train_data_downstream = create_downstream_data(self.args.dataset, task, train_sequences, self.real_data.columns)
 
-            tuner = DownstreamTuner(train_data_downstream, self.args.dataset, self.args.seed, self.output_path)
+            tuner = DownstreamTuner(train_data_downstream, self.args.dataset, self.args.seed, self.HYPERPARAM_DIR)
             model = task_to_model(task)
             tuner.tune(model, self.args.trials, self.args.folds, self.args.epochs)
 
@@ -148,7 +156,7 @@ class Pipeline:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", default='cf')
+    parser.add_argument("--dataset", default='cf', choices=["cf", "sepsis"])
     parser.add_argument("--models", type=str, nargs='*')
     parser.add_argument("--tasks", type=str, nargs="+")
     parser.add_argument("--flag_gen_tuning", action="store_true")
@@ -158,7 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--flag_generation", action="store_true")
     parser.add_argument("--flag_evaluation", action="store_true")
     parser.add_argument("--flag_postprocessing", action="store_true")
-    parser.add_argument("--output_folder", type=str, required=True)
+    parser.add_argument("--output_folder", type=str, default=None)
     parser.add_argument("--split_size", default=0.7)
     parser.add_argument("--val_split_size", default=0.15)
     parser.add_argument("--epochs", default=50, type=int)
