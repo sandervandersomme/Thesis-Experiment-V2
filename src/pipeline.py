@@ -159,6 +159,10 @@ if __name__ == "__main__":
     parser.add_argument("--dataset", default='cf', choices=["cf", "sepsis"])
     parser.add_argument("--models", type=str, nargs='*')
     parser.add_argument("--tasks", type=str, nargs="+")
+    parser.add_argument("--output_folder", type=str, default=None)
+    parser.add_argument("--verbose", action="store_true")
+
+    # Set modes
     parser.add_argument("--flag_gen_tuning", action="store_true")
     parser.add_argument("--flag_down_tuning", action="store_true")
     parser.add_argument("--flag_default_params", action="store_true")
@@ -166,11 +170,12 @@ if __name__ == "__main__":
     parser.add_argument("--flag_generation", action="store_true")
     parser.add_argument("--flag_evaluation", action="store_true")
     parser.add_argument("--flag_postprocessing", action="store_true")
-    parser.add_argument("--output_folder", type=str, default=None)
+
+    # Experiment settings
     parser.add_argument("--split_size", default=0.7)
     parser.add_argument("--val_split_size", default=0.15)
     parser.add_argument("--epochs", default=50, type=int)
-    parser.add_argument("--trials", default=5, type=int)
+    parser.add_argument("--trials", default=10, type=int)
     parser.add_argument("--folds", default=10, type=int)
     parser.add_argument("--num_instances", default=3, type=int)
     parser.add_argument("--num_syn_datasets", default=3, type=int)
