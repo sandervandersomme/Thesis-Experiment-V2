@@ -18,7 +18,6 @@ class Sepsis(Dataset):
         num_events = self.sequences.groupby("CaseID").size().iloc[0]
         num_sequences = len(self.sequences) // num_events
         self.sequences.drop(columns=["CaseID"], inplace=True)
-        print(self.sequences.dtypes)
 
         self.sequences = self.sequences.values.reshape(num_sequences, num_events, self.sequences.shape[1]).astype(float)
         return torch.Tensor(self.sequences)
