@@ -9,8 +9,8 @@ class Sepsis(Dataset):
 
     def __init__(self):
         super().__init__()
-        self.sequences = pd.read_csv(self.path_data)
-        self.columns = self.sequences.columns
+        self.sequences = pd.read_csv(self.path_data).reset_index()
+        self.columns = list(self.sequences.columns)
         self.boolean_indices = self.extract_boolean_indices()
         self.sequences = self.reshape()
 
