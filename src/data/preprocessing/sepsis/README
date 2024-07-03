@@ -1,0 +1,7 @@
+
+This file describes how to prepare the sepsis data
+
+Follow the following steps:
+1. The Sepsis data came in a .xes.gz format. Use the decompress.py script for decompressing the dataset.
+2. Use the xes_to_csv.py script to convert the .xes file into a .csv file
+3. 
