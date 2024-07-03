@@ -8,6 +8,7 @@ from src.data.sepsis.sepsis import Sepsis
 from torch.utils.data import Dataset
 from src.data.cf.cf_classification import create_cf_classification_data
 from src.data.cf.cf_regression import create_cf_regression_data
+from src.data.sepsis.sepsis_classification import create_sepsis_classification_data
 from src.data.random_dataset.random_data import RandomDataset, RandomDownstreamClassificationDataset, RandomDownstreamRegressionDataset
 
 def load_syn_data(path): return torch.load(path)
@@ -27,6 +28,9 @@ def create_downstream_data(dataset: str, task: str, sequences: torch.Tensor, col
     # Create CF downstream data
     if dataset == "cf" and task == "classification": return create_cf_classification_data(sequences, columns)
     if dataset == "cf" and task == "regression": return create_cf_regression_data(sequences, columns)
+    
+    # Create CF downstream data
+    if dataset == "sepsis" and task == "classification": return create_sepsis_classification_data(sequences, columns)
     
     # Create random downstream data
     if dataset == "random" and task == "classification": return RandomDownstreamClassificationDataset()
