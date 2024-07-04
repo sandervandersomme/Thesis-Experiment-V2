@@ -147,7 +147,7 @@ class Pipeline:
         self.args.test_data = self.test_data
         self.args.columns = self.real_data.columns
 
-        collector = Collector(self.args.criteria, self.args.models, args.num_instances, args.num_syn_datasets, self.args, self.output_path)
+        collector = Collector(self.args.criteria, self.args.models, args.num_instances, args.num_syn_datasets, self.args, self.ROOT_DIR)
         collector.collect_results()
     
     def post_process_results(self):
