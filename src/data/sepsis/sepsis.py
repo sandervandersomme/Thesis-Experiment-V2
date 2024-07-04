@@ -9,10 +9,12 @@ class Sepsis(Dataset):
 
     def __init__(self):
         super().__init__()
-        self.sequences = pd.read_csv(self.path_data).reset_index()
+        self.sequences = pd.read_csv(self.path_data)
         self.columns = list(self.sequences.columns)
         self.boolean_indices = self.extract_boolean_indices()
         self.sequences = self.reshape()
+
+        assert self.sequences.size(2) == len(self.columns), "Number of columns don't match"
 
     def reshape(self):
         num_events = self.sequences.groupby("CaseID").size().iloc[0]
