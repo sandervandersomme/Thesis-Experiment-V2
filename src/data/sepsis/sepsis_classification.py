@@ -9,6 +9,10 @@ def create_sepsis_classification_data(sequences: torch.Tensor, columns: List[str
     sequences = torch.cat((sequences[:, :, :label_idx], sequences[:, :, label_idx+1:]), dim=2)
     columns = [col for col in columns if col != "Return ER"]
     
+    assert sequences.size(2) == len(columns), "Number of columns and variables don't match"
+    assert len(labels) == len(sequences), "Number of sequences and labels don't match"
+    assert "Return ER" not in columns
+
     return DownstreamDataset(sequences, labels, columns)
 
 if __name__ == "__main__":
