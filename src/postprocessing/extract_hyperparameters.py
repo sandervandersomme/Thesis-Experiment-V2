@@ -6,8 +6,9 @@ import argparse
 
 def extract_parameters(dir):
     # Path to the folder containing the Optuna study files
-    folder_path = f'outputs/{dir}/hyperparams/trials/'
-    save_path = f'outputs/{dir}/eval/processed/'
+    folder_path = f'outputs/{dir}/hyperparams/'
+    save_path = f'outputs/{dir}/results/hyperparams'
+    os.makedirs(save_path, exist_ok=True)
 
     # Dictionary to store the results
     all_results = pd.DataFrame()
