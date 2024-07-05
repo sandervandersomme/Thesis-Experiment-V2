@@ -34,6 +34,7 @@ class Pipeline:
         self.MODEL_DIR = os.path.join(self.ROOT_DIR, f"models/")
         self.SYNDATA_DIR = os.path.join(self.ROOT_DIR, f"syndata/")
         self.EVAL_DIR = os.path.join(self.ROOT_DIR, f"eval/")
+        self.RESULTS_DIR = os.path.join(self.ROOT_DIR, f"results/")
 
 
     def setup_folders(self):
@@ -42,6 +43,7 @@ class Pipeline:
         os.makedirs(self.MODEL_DIR, exist_ok=True)
         os.makedirs(self.SYNDATA_DIR, exist_ok=True)
         os.makedirs(self.EVAL_DIR, exist_ok=True)
+        os.makedirs(self.RESULTS_DIR, exist_ok=True)
 
     def setup_data(self):
         print("Setting up data")
