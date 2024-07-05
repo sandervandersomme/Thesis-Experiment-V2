@@ -58,29 +58,38 @@ class Pipeline:
         return split(self.real_data, self.args.split_size, self.args.seed)
 
     def execute(self):
-        if self.args.flag_gen_tuning:
+        if self.args.full_cycle:            
             print("Start tuning generative models")
             self.tune_gen_models()
-
-        if self.args.flag_down_tuning:
             print("Start tuning downstream model")
             self.tune_downstream_models()
-
-        if self.args.flag_training:
             print("Start training models..")
             self.train_models()
-
-        if self.args.flag_generation:
             print("Start generating synthetic datasets..")
             self.generate_data()
-
-        if self.args.flag_evaluation:
             print("Start evaluation..")
             self.evaluate_models()
-
-        if self.args.flag_postprocessing:
             print("Start postprocessing the results")
             self.post_process_results()
+        else:
+            if self.args.tune_generators:
+                print("Start tuning generative models")
+                self.tune_gen_models()
+            if self.args.tune_downstream:
+                print("Start tuning downstream model")
+                self.tune_downstream_models()
+            if self.args.train:
+                print("Start training models..")
+                self.train_models()
+            if self.args.generate:
+                print("Start generating synthetic datasets..")
+                self.generate_data()
+            if self.args.evaluate:
+                print("Start evaluation..")
+                self.evaluate_models()
+            if self.args.postprocess:
+                print("Start postprocessing the results")
+                self.post_process_results()
 
     def tune_gen_models(self):
         for model in self.args.models:
@@ -165,13 +174,14 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", action="store_true")
 
     # Set modes
-    parser.add_argument("--flag_gen_tuning", action="store_true")
-    parser.add_argument("--flag_down_tuning", action="store_true")
+    parser.add_argument("--full_cycle", action="store_true")
+    parser.add_argument("--tune_generators", action="store_true")
+    parser.add_argument("--tune_downstream", action="store_true")
     parser.add_argument("--flag_default_params", action="store_true")
-    parser.add_argument("--flag_training", action="store_true")
-    parser.add_argument("--flag_generation", action="store_true")
-    parser.add_argument("--flag_evaluation", action="store_true")
-    parser.add_argument("--flag_postprocessing", action="store_true")
+    parser.add_argument("--train", action="store_true")
+    parser.add_argument("--generate", action="store_true")
+    parser.add_argument("--evaluate", action="store_true")
+    parser.add_argument("--postprocess", action="store_true")
 
     # Experiment settings
     parser.add_argument("--split_size", default=0.7)
